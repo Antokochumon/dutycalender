@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4285f4">
+  <meta name="description" content="Professional Duty Calendar App - Advanced scheduling with smart reminders, analytics, and beautiful interface">
+  <meta name="keywords" content="duty calendar, shift planner, work schedule, calendar app, professional scheduling">
+  <title>Duty Master Pro 2025 - Professional Duty Calendar</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-32x32.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #93c5fd;
+      --secondary: #10b981;
+      --secondary-dark: #059669;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --info: #06b6d4;
+      --current-date: #dc2626;
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --transition-fast: 0.15s ease;
+      --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root.dark {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border-light: #334155;
+      --border-medium: #475569;
+      --current-date: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: all var(--transition-smooth);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 100vh;
+      padding: var(--spacing-sm);
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Enhanced Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-lg);
+      position: sticky;
+      top: 0;
+      background: var(--bg-primary);
+      z-index: 100;
+      padding: var(--spacing-sm) 0;
+      border-radius: var(--radius-lg);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      flex: 1;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: white;
+      box-shadow: var(--shadow-md);
+      animation: pulse 2s infinite;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-toggle:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .menu-toggle:active {
+      transform: scale(0.95);
+    }
+
+    /* Enhanced Mobile Menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-light);
+      box-shadow: var(--shadow-xl);
+      z-index: 1000;
+      padding: var(--spacing-lg);
+      transform: translateY(-100%);
+      transition: transform var(--transition-smooth);
+      backdrop-filter: blur(10px);
+    }
+
+    .mobile-menu.active {
+      transform: translateY(0);
+    }
+
+    .mobile-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .mobile-menu-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .close-menu {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: var(--spacing-xs);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .close-menu:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: none;
+      align-items: center;
+      gap: var(--spacing-xs);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .card-icon {
+      font-size: 1.2rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .card-description {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    /* Enhanced Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-md);
+      text-align: center;
+      transition: all var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: var(--spacing-xs);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-sm);
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-xs);
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: var(--spacing-sm);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all var(--transition-fast);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      background: var(--bg-secondary);
+    }
+
+    /* Enhanced Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      min-height: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--secondary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-outline {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-medium);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: var(--bg-tertiary);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-group {
+      display: none;
+    }
+
+    /* Enhanced Switch */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-md);
+      padding: var(--spacing-sm);
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .switch-info {
+      flex: 1;
+    }
+
+    .switch-title {
+      font-weight: 500;
+      font-size: 0.85rem;
+      margin-bottom: 2px;
+    }
+
+    .switch-description {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--border-medium);
+      transition: var(--transition-fast);
+      border-radius: 12px;
+    }
+
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      transition: var(--transition-fast);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .switch-slider {
+      background: var(--primary);
+    }
+
+    input:checked + .switch-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Enhanced Calendar */
+    .calendar-container {
+      margin-top: var(--spacing-md);
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-md);
+      padding: 0 var(--spacing-xs);
+    }
+
+    .calendar-nav-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .calendar-nav-btn:hover {
+      background: var(--bg-tertiary);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .calendar-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-align: center;
+      flex: 1;
+      margin: 0 var(--spacing-sm);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    .calendar-day-name {
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-align: center;
+      padding: var(--spacing-xs) 0;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .calendar-date {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+      font-weight: 500;
+      min-height: 36px;
+      font-size: 0.8rem;
+    }
+
+    .calendar-date:hover {
+      background: var(--bg-tertiary);
+      transform: scale(1.05);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .calendar-date.other-month {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Enhanced Current Date Styling */
+    .calendar-date.today {
+      color: var(--current-date);
+      font-weight: 700;
+      border-color: var(--current-date);
+    }
+
+    .calendar-date.today .date-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--current-date);
+      color: white;
+      border-radius: 50%;
+    }
+
+    .calendar-date.duty {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--secondary);
+    }
+
+    .calendar-date.duty.today {
+      background: rgba(220, 38, 38, 0.1);
+    }
+
+    .calendar-date.selected {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      transform: scale(1.1);
+      box-shadow: var(--shadow-md);
+    }
+
+    .date-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+    }
+
+    .duty-time {
+      font-size: 0.5rem;
+      font-weight: 400;
+      margin-top: 1px;
+      opacity: 0.9;
+      background: rgba(16, 185, 129, 0.2);
+      padding: 1px 3px;
+      border-radius: 2px;
+      line-height: 1;
+    }
+
+    /* Enhanced Notifications */
+    .notification {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-md);
+      box-shadow: var(--shadow-xl);
+      z-index: 2000;
+      transform: translateY(-100px);
+      transition: transform var(--transition-smooth);
+      backdrop-filter: blur(10px);
+    }
+
+    .notification.show {
+      transform: translateY(0);
+    }
+
+    .notification.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .notification.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .notification.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .notification.info {
+      border-left: 4px solid var(--info);
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes todayPulse {
+      0%, 100% {
+        box-shadow: var(--shadow-md);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+      body {
+        padding: var(--spacing-xs);
+      }
+
+      .container {
+        padding: 0;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
+      }
+
+      .calendar-grid {
+        gap: 1px;
+        padding: var(--spacing-xs);
+      }
+
+      .calendar-date {
+        min-height: 32px;
+        font-size: 0.75rem;
+      }
+
+      .duty-time {
+        display: none;
+      }
+
+      /* Mobile-specific switch styles */
+      .switch-container {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: var(--spacing-sm);
+      }
+
+      .switch-info {
+        width: 100%;
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .switch {
+        align-self: flex-end;
+      }
+    }
+
+    @media (min-width: 481px) and (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 769px) {
+      body {
+        padding: var(--spacing-md);
+      }
+
+      .container {
+        max-width: 900px;
+      }
+
+      .theme-toggle {
+        display: flex;
+      }
+
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-md);
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        padding: 0;
+        font-size: 12px;
+      }
+
+      .menu-toggle,
+      .mobile-menu,
+      .theme-toggle,
+      .btn-group,
+      .notification {
+        display: none !important;
+      }
+
+      .card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+      }
+
+      .calendar-grid {
+        border: 1px solid #ddd;
+      }
+
+      .calendar-date {
+        border: 1px solid #ddd;
+        min-height: 40px;
+      }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="fade-in">
+      <div class="logo">
+        <div class="logo-icon">📅</div>
+        <div>
+          <h1>Duty Master Pro</h1>
+          <div class="subtitle">Professional Scheduling</div>
+        </div>
+      </div>
+      
+      <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+        <span id="menuIcon">⚙️</span>
+      </button>
+      
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </header>
+
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="mobile-menu-header">
+        <div class="mobile-menu-title">Quick Actions</div>
+        <button class="close-menu" onclick="toggleMobileMenu()" aria-label="Close menu">×</button>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn btn-primary" onclick="quickAddDuty()" style="width: 100%;">
+          <span>➕</span> Quick Add Duty
+        </button>
+        <button class="btn btn-secondary" onclick="showStats()" style="width: 100%;">
+          <span>📊</span> View Analytics
+        </button>
+        <button class="btn btn-outline" onclick="exportToPDF()" style="width: 100%;">
+          <span>📄</span> Export PDF
+        </button>
+        <button class="btn btn-outline" onclick="toggleTheme()" style="width: 100%;">
+          <span id="mobileThemeIcon">🌙</span> <span id="mobileThemeText">Dark Mode</span>
+        </button>
+      </div>
+    </div>
+
+    <main>
+      <div class="stats-grid fade-in">
+        <div class="stat-card">
+          <div class="stat-number" id="totalDuties">0</div>
+          <div class="stat-label">Total Duties</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="monthDuties">0</div>
+          <div class="stat-label">This Month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="nextDuty">--</div>
+          <div class="stat-label">Next Duty</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgHours">0</div>
+          <div class="stat-label">Avg Hours</div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <div>
+            <div class="card-title">Duty Management</div>
+            <div class="card-description">Schedule and manage your duty assignments</div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="dutyDate">📅 Select Date</label>
+          <input type="date" id="dutyDate" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startTime">🕐 Start Time</label>
+            <input type="time" id="startTime" value="08:00" required>
+          </div>
+          <div class="form-group">
+            <label for="endTime">🕔 End Time</label>
+            <input type="time" id="endTime" value="17:00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="dutyType">🏷️ Duty Type</label>
+          <select id="dutyType">
+            <option value="regular">Regular Duty</option>
+            <option value="overtime">Overtime</option>
+            <option value="emergency">Emergency</option>
+            <option value="training">Training</option>
+            <option value="meeting">Meeting</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="dutyNotes">📝 Notes (Optional)</label>
+          <textarea id="dutyNotes" rows="2" placeholder="Add any additional notes..."></textarea>
+        </div>
+        
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="addDuty()" id="addBtn">
+            <span>➕</span> Add Duty
+          </button>
+          <button class="btn btn-danger" onclick="removeDuty()" id="removeBtn">
+            <span>🗑️</span> Remove
+          </button>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon">🔔</div>
+          <div>
+            <div class="card-title">Smart Notifications</div>
+            <div class="card-description">Get intelligent reminders for your duties</div>
+          </div>
+        </div>
+        
+        <div class="switch-container">
+          <div class="switch-info">
+            <div class="switch-title">Enable Notifications</div>
+            <div class="switch-description">Receive alerts 1 hour before duty starts</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="notificationToggle">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-container">
+          <div class="switch-info">
+            <div class="switch-title">Daily Summary</div>
+            <div class="switch-description">Get daily overview of upcoming duties</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="dailySummaryToggle">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-container">
+          <div class="switch-info">
+            <div class="switch-title">Overtime Alerts</div>
+            <div class="switch-description">Alert when approaching overtime limits</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="overtimeToggle">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon">📆</div>
+          <div>
+            <div class="card-title">Duty Calendar</div>
+            <div class="card-description">Visual overview of all your scheduled duties</div>
+          </div>
+        </div>
+
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <button class="calendar-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month">‹</button>
+            <div class="calendar-title" id="calendarTitle">December 2024</div>
+            <button class="calendar-nav-btn" onclick="changeMonth(1)" aria-label="Next month">›</button>
+          </div>
+
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="notification" id="notification">
+    <div id="notificationMessage"></div>
+  </div>
+
+  <script>
+    let currentDate = new Date();
+    let selectedDate = null;
+    let duties = JSON.parse(localStorage.getItem('dutyMasterDuties') || '[]');
+    let settings = JSON.parse(localStorage.getItem('dutyMasterSettings') || '{"theme":"light","notifications":false,"dailySummary":false,"overtime":false}');
+
+    const elements = {
+      dutyDate: document.getElementById('dutyDate'),
+      startTime: document.getElementById('startTime'),
+      endTime: document.getElementById('endTime'),
+      dutyType: document.getElementById('dutyType'),
+      dutyNotes: document.getElementById('dutyNotes'),
+      calendarGrid: document.getElementById('calendarGrid'),
+      calendarTitle: document.getElementById('calendarTitle'),
+      totalDuties: document.getElementById('totalDuties'),
+      monthDuties: document.getElementById('monthDuties'),
+      nextDuty: document.getElementById('nextDuty'),
+      avgHours: document.getElementById('avgHours'),
+      notification: document.getElementById('notification'),
+      notificationMessage: document.getElementById('notificationMessage'),
+      mobileMenu: document.getElementById('mobileMenu'),
+      menuIcon: document.getElementById('menuIcon'),
+      themeIcon: document.getElementById('themeIcon'),
+      themeText: document.getElementById('themeText'),
+      mobileThemeIcon: document.getElementById('mobileThemeIcon'),
+      mobileThemeText: document.getElementById('mobileThemeText'),
+      addBtn: document.getElementById('addBtn'),
+      removeBtn: document.getElementById('removeBtn'),
+      notificationToggle: document.getElementById('notificationToggle'),
+      dailySummaryToggle: document.getElementById('dailySummaryToggle'),
+      overtimeToggle: document.getElementById('overtimeToggle')
+    };
+
+    const MONTHS = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const DUTY_TYPES = {
+      regular: { color: '#10b981', label: 'Regular' },
+      overtime: { color: '#f59e0b', label: 'Overtime' },
+      emergency: { color: '#ef4444', label: 'Emergency' },
+      training: { color: '#3b82f6', label: 'Training' },
+      meeting: { color: '#8b5cf6', label: 'Meeting' }
+    };
+
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    function parseDate(dateString) {
+      return new Date(dateString + 'T00:00:00');
+    }
+
+    function isToday(date) {
+      const today = new Date();
+      return date.toDateString() === today.toDateString();
+    }
+
+    function isSameMonth(date1, date2) {
+      return date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear();
+    }
+
+    function calculateHours(startTime, endTime) {
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      const startMinutes = startHour * 60 + startMin;
+      let endMinutes = endHour * 60 + endMin;
+      
+      if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60;
+      }
+      
+      return (endMinutes - startMinutes) / 60;
+    }
+
+    function formatTime(time) {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    function applyTheme() {
+      document.documentElement.className = settings.theme;
+      updateThemeUI();
+    }
+
+    function toggleTheme() {
+      settings.theme = settings.theme === 'light' ? 'dark' : 'light';
+      saveSettings();
+      applyTheme();
+      showNotification(`Switched to ${settings.theme} mode`, 'info');
+    }
+
+    function updateThemeUI() {
+      const isDark = settings.theme === 'dark';
+      elements.themeIcon.textContent = isDark ? '☀️' : '🌙';
+      elements.themeText.textContent = isDark ? 'Light' : 'Dark';
+      elements.mobileThemeIcon.textContent = isDark ? '☀️' : '🌙';
+      elements.mobileThemeText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    function toggleMobileMenu() {
+      const isOpen = elements.mobileMenu.classList.toggle('active');
+      elements.menuIcon.textContent = isOpen ? '✕' : '⚙️';
+    }
+
+    function saveDuties() {
+      localStorage.setItem('dutyMasterDuties', JSON.stringify(duties));
+    }
+
+    function saveSettings() {
+      localStorage.setItem('dutyMasterSettings', JSON.stringify(settings));
+    }
+
+    function addDuty() {
+      const date = elements.dutyDate.value;
+      const startTime = elements.startTime.value;
+      const endTime = elements.endTime.value;
+      const type = elements.dutyType.value;
+      const notes = elements.dutyNotes.value.trim();
+
+      if (!date) {
+        showNotification('Please select a date', 'error');
+        return;
+      }
+
+      if (!startTime || !endTime) {
+        showNotification('Please enter both start and end times', 'error');
+        return;
+      }
+
+      if (startTime >= endTime) {
+        showNotification('End time must be after start time', 'error');
+        return;
+      }
+
+      duties = duties.filter(d => d.date !== date);
+
+      const hours = calculateHours(startTime, endTime);
+      const duty = {
+        id: Date.now(),
+        date,
+        startTime,
+        endTime,
+        type,
+        notes,
+        hours,
+        created: new Date().toISOString()
+      };
+
+      duties.push(duty);
+      saveDuties();
+      generateCalendar();
+      updateStatistics();
+
+      const formattedDate = parseDate(date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      showNotification(
+        `Duty scheduled for ${formattedDate} from ${formatTime(startTime)} to ${formatTime(endTime)}`,
+        'success'
+      );
+
+      if (settings.notifications) {
+        scheduleNotification(duty);
+      }
+
+      elements.dutyNotes.value = '';
+    }
+
+    function removeDuty() {
+      const date = elements.dutyDate.value;
+
+      if (!date) {
+        showNotification('Please select a date', 'error');
+        return;
+      }
+
+      const initialLength = duties.length;
+      duties = duties.filter(d => d.date !== date);
+
+      if (duties.length === initialLength) {
+        showNotification('No duty found for this date', 'error');
+        return;
+      }
+
+      saveDuties();
+      generateCalendar();
+      updateStatistics();
+
+      const formattedDate = parseDate(date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      showNotification(`Duty removed for ${formattedDate}`, 'success');
+    }
+
+    function quickAddDuty() {
+      const today = new Date();
+      elements.dutyDate.value = formatDate(today);
+      toggleMobileMenu();
+      elements.dutyDate.focus();
+      showNotification('Quick add: Date set to today', 'info');
+    }
+
+    function generateCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      elements.calendarTitle.textContent = `${MONTHS[month]} ${year}`;
+      elements.calendarGrid.innerHTML = '';
+
+      DAYS.forEach(day => {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day-name';
+        dayElement.textContent = day;
+        elements.calendarGrid.appendChild(dayElement);
+      });
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startingDayOfWeek = firstDay.getDay();
+
+      for (let i = 0; i < startingDayOfWeek; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-date other-month';
+        const prevMonthDate = new Date(year, month, -startingDayOfWeek + i + 1);
+        emptyDay.textContent = prevMonthDate.getDate();
+        elements.calendarGrid.appendChild(emptyDay);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateString = formatDate(date);
+        const duty = duties.find(d => d.date === dateString);
+
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-date';
+        dayElement.textContent = day;
+
+        if (!isSameMonth(date, currentDate)) {
+          dayElement.classList.add('other-month');
+        }
+
+        if (isToday(date)) {
+          dayElement.classList.add('today');
+        }
+
+        if (duty) {
+          dayElement.classList.add('duty');
+          dayElement.style.background = DUTY_TYPES[duty.type]?.color || '#10b981';
+          
+          const timeElement = document.createElement('div');
+          timeElement.className = 'duty-time';
+          timeElement.textContent = `${duty.startTime}-${duty.endTime}`;
+          dayElement.appendChild(timeElement);
+        }
+
+        if (selectedDate === dateString) {
+          dayElement.classList.add('selected');
+        }
+
+        dayElement.addEventListener('click', () => {
+          selectedDate = dateString;
+          elements.dutyDate.value = dateString;
+          
+          if (duty) {
+            elements.startTime.value = duty.startTime;
+            elements.endTime.value = duty.endTime;
+            elements.dutyType.value = duty.type;
+            elements.dutyNotes.value = duty.notes || '';
+          }
+          
+          generateCalendar();
+        });
+
+        elements.calendarGrid.appendChild(dayElement);
+      }
+
+      const totalCells = elements.calendarGrid.children.length - 7;
+      const remainingCells = 42 - totalCells - 7;
+
+      for (let i = 1; i <= remainingCells; i++) {
+        const nextMonthDay = document.createElement('div');
+        nextMonthDay.className = 'calendar-date other-month';
+        nextMonthDay.textContent = i;
+        elements.calendarGrid.appendChild(nextMonthDay);
+      }
+    }
+
+    function changeMonth(direction) {
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      generateCalendar();
+    }
+
+    function updateStatistics() {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      elements.totalDuties.textContent = duties.length;
+
+      const thisMonthDuties = duties.filter(duty => {
+        const dutyDate = parseDate(duty.date);
+        return dutyDate.getMonth() === currentMonth && dutyDate.getFullYear() === currentYear;
+      });
+      elements.monthDuties.textContent = thisMonthDuties.length;
+
+      const futureDuties = duties
+        .filter(duty => parseDate(duty.date) >= now)
+        .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+
+      if (futureDuties.length > 0) {
+        const nextDutyDate = parseDate(futureDuties[0].date);
+        const daysUntil = Math.ceil((nextDutyDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        elements.nextDuty.textContent = daysUntil === 0 ? 'Today' : `${daysUntil}d`;
+      } else {
+        elements.nextDuty.textContent = '--';
+      }
+
+      if (duties.length > 0) {
+        const totalHours = duties.reduce((sum, duty) => sum + (duty.hours || 0), 0);
+        const avgHours = totalHours / duties.length;
+        elements.avgHours.textContent = avgHours.toFixed(1);
+      } else {
+        elements.avgHours.textContent = '0';
+      }
+    }
+
+    function showNotification(message, type = 'info') {
+      elements.notificationMessage.textContent = message;
+      elements.notification.className = `notification ${type} show`;
+
+      setTimeout(() => {
+        elements.notification.classList.remove('show');
+      }, 4000);
+
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+
+      if (settings.notifications && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Duty Master Pro', {
+          body: message,
+          icon: 'icon-192x192.png',
+          badge: 'icon-192x192.png',
+          tag: 'duty-notification',
+          requireInteraction: false,
+          silent: type === 'info'
+        });
+      }
+    }
+
+    function scheduleNotification(duty) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+      }
+
+      const dutyDate = parseDate(duty.date);
+      const now = new Date();
+
+      const [hours, minutes] = duty.startTime.split(':').map(Number);
+      const notificationTime = new Date(dutyDate);
+      notificationTime.setHours(hours - 1, minutes, 0, 0);
+
+      if (notificationTime > now) {
+        const timeUntilNotification = notificationTime.getTime() - now.getTime();
+
+        setTimeout(() => {
+          new Notification('Duty Reminder - Duty Master Pro', {
+            body: `Your ${DUTY_TYPES[duty.type]?.label || 'duty'} starts in 1 hour at ${formatTime(duty.startTime)}`,
+            icon: 'icon-192x192.png',
+            badge: 'icon-192x192.png',
+            tag: duty.id.toString(),
+            requireInteraction: true,
+            actions: [
+              { action: 'view', title: 'View Details' },
+              { action: 'snooze', title: 'Snooze 10min' }
+            ]
+          });
+        }, timeUntilNotification);
+      }
+    }
+
+    function initializeSettings() {
+      elements.notificationToggle.checked = settings.notifications;
+      elements.dailySummaryToggle.checked = settings.dailySummary;
+      elements.overtimeToggle.checked = settings.overtime;
+
+      elements.notificationToggle.addEventListener('change', (e) => {
+        settings.notifications = e.target.checked;
+        saveSettings();
+        
+        if (e.target.checked && 'Notification' in window) {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showNotification('Notifications enabled successfully', 'success');
+            } else {
+              showNotification('Notification permission denied', 'error');
+              elements.notificationToggle.checked = false;
+              settings.notifications = false;
+              saveSettings();
+            }
+          });
+        } else if (!e.target.checked) {
+          showNotification('Notifications disabled', 'info');
+        }
+      });
+
+      elements.dailySummaryToggle.addEventListener('change', (e) => {
+        settings.dailySummary = e.target.checked;
+        saveSettings();
+        showNotification(
+          e.target.checked ? 'Daily summary enabled' : 'Daily summary disabled',
+          'info'
+        );
+      });
+
+      elements.overtimeToggle.addEventListener('change', (e) => {
+        settings.overtime = e.target.checked;
+        saveSettings();
+        showNotification(
+          e.target.checked ? 'Overtime alerts enabled' : 'Overtime alerts disabled',
+          'info'
+        );
+      });
+    }
+
+    function showStats() {
+      toggleMobileMenu();
+      
+      const totalHours = duties.reduce((sum, duty) => sum + (duty.hours || 0), 0);
+      const avgHours = duties.length > 0 ? (totalHours / duties.length).toFixed(1) : 0;
+      const overtimeDuties = duties.filter(duty => (duty.hours || 0) > 8).length;
+      
+      const statsMessage = `
+📊 Duty Statistics:
+• Total Duties: ${duties.length}
+• Total Hours: ${totalHours.toFixed(1)}h
+• Average Hours: ${avgHours}h
+• Overtime Duties: ${overtimeDuties}
+• Most Common Type: ${getMostCommonDutyType()}
+      `.trim();
+      
+      showNotification(statsMessage, 'info');
+    }
+
+    function getMostCommonDutyType() {
+      if (duties.length === 0) return 'None';
+      
+      const typeCount = duties.reduce((acc, duty) => {
+        acc[duty.type] = (acc[duty.type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const mostCommon = Object.entries(typeCount).reduce((a, b) => a[1] > b[1] ? a : b);
+      return DUTY_TYPES[mostCommon[0]]?.label || mostCommon[0];
+    }
+
+    async function exportToPDF() {
+      toggleMobileMenu();
+      showNotification('Generating PDF...', 'info');
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+
+        // Header
+        pdf.setFontSize(20);
+        pdf.setTextColor(59, 130, 246);
+        pdf.text('Duty Master Pro - Report', 20, 30);
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+
+        // Statistics
+        pdf.setFontSize(16);
+        pdf.text('Statistics', 20, 65);
+        
+        pdf.setFontSize(12);
+        const stats = [
+          `Total Duties: ${duties.length}`,
+          `This Month: ${elements.monthDuties.textContent}`,
+          `Average Hours: ${elements.avgHours.textContent}h`,
+          `Most Common Type: ${getMostCommonDutyType()}`
+        ];
+
+        stats.forEach((stat, index) => {
+          pdf.text(stat, 25, 80 + (index * 10));
+        });
+
+        // Duties List
+        if (duties.length > 0) {
+          pdf.setFontSize(16);
+          pdf.text('Duty Schedule', 20, 130);
+
+          const sortedDuties = duties.sort((a, b) => new Date(a.date) - new Date(b.date));
+          
+          pdf.setFontSize(10);
+          let yPos = 145;
+
+          sortedDuties.forEach((duty, index) => {
+            if (yPos > 270) {
+              pdf.addPage();
+              yPos = 20;
+            }
+
+            const date = parseDate(duty.date).toLocaleDateString();
+            const type = DUTY_TYPES[duty.type]?.label || duty.type;
+            const time = `${formatTime(duty.startTime)} - ${formatTime(duty.endTime)}`;
+            const hours = `${duty.hours?.toFixed(1) || '0'}h`;
+
+            pdf.text(`${index + 1}. ${date} | ${type} | ${time} | ${hours}`, 25, yPos);
+            
+            if (duty.notes) {
+              yPos += 8;
+              pdf.setFontSize(8);
+              pdf.setTextColor(100, 100, 100);
+              pdf.text(`   Notes: ${duty.notes}`, 25, yPos);
+              pdf.setFontSize(10);
+              pdf.setTextColor(0, 0, 0);
+            }
+            
+            yPos += 12;
+          });
+        }
+
+        // Footer
+        const pageCount = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(8);
+          pdf.setTextColor(150, 150, 150);
+          pdf.text(`Page ${i} of ${pageCount} - Duty Master Pro`, 20, 290);
+        }
+
+        pdf.save(`duty-report-${formatDate(new Date())}.pdf`);
+        showNotification('PDF exported successfully', 'success');
+
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        showNotification('Failed to export PDF', 'error');
+      }
+    }
+
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      setTimeout(() => {
+        if (deferredPrompt) {
+          showInstallPrompt();
+        }
+      }, 10000);
+    });
+
+    function showInstallPrompt() {
+      const installBanner = document.createElement('div');
+      installBanner.innerHTML = `
+        <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--bg-secondary); 
+                    border: 1px solid var(--border-light); border-radius: var(--radius-lg); 
+                    padding: var(--spacing-md); box-shadow: var(--shadow-xl); z-index: 2000; 
+                    display: flex; align-items: center; gap: var(--spacing-md); max-width: 400px; 
+                    margin: 0 auto; backdrop-filter: blur(10px);">
+          <div style="flex: 1;">
+            <div style="font-weight: 600; margin-bottom: 4px; font-size: 0.9rem;">Install Duty Master Pro</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Get the full app experience with offline access</div>
+          </div>
+          <button onclick="installApp()" style="background: var(--primary); color: white; border: none; 
+                                                 padding: 8px 12px; border-radius: var(--radius-md); 
+                                                 font-weight: 500; cursor: pointer; font-size: 0.8rem;">Install</button>
+          <button onclick="dismissInstall()" style="background: none; border: none; font-size: 1.2rem; 
+                                                   color: var(--text-secondary); cursor: pointer; padding: 4px;">×</button>
+        </div>
+      `;
+      
+      document.body.appendChild(installBanner);
+      
+      window.installApp = () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            deferredPrompt = null;
+            document.body.removeChild(installBanner);
+          });
+        }
+      };
+      
+      window.dismissInstall = () => {
+        document.body.removeChild(installBanner);
+      };
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('Service Worker registered successfully');
+          })
+          .catch(registrationError => {
+            console.log('Service Worker registration failed');
+          });
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'n':
+            e.preventDefault();
+            quickAddDuty();
+            break;
+          case 's':
+            e.preventDefault();
+            showStats();
+            break;
+          case 'p':
+            e.preventDefault();
+            exportToPDF();
+            break;
+          case 'd':
+            e.preventDefault();
+            toggleTheme();
+            break;
+        }
+      }
+    });
+
+    function initializeApp() {
+      const today = new Date();
+      elements.dutyDate.value = formatDate(today);
+      
+      applyTheme();
+      initializeSettings();
+      
+      generateCalendar();
+      updateStatistics();
+      
+      if (settings.notifications && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      
+      if (duties.length === 0) {
+        setTimeout(() => {
+          showNotification('Welcome to Duty Master Pro! Start by adding your first duty.', 'info');
+        }, 2000);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!elements.mobileMenu.contains(e.target) && !e.target.closest('.menu-toggle')) {
+        if (elements.mobileMenu.classList.contains('active')) {
+          toggleMobileMenu();
+        }
+      }
+    });
+
+
+    if ('serviceWorker' in navigator && 'Notification' in window) {
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'NOTIFICATION_CLICK') {
+          showNotification('Notification clicked from background', 'info');
+        }
+      });
+    }
+
+    initializeApp();
+  </script>
+</body>
+</html>
