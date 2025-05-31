@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#3b82f6">
   <meta name="description" content="Professional Duty Calendar App - Advanced scheduling with smart reminders">
   <title>Duty Calendar 2025</title>
+  <!-- Add jsPDF library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
       --primary: #3b82f6;
@@ -1579,9 +1582,189 @@
     }
 
     function exportToPDF() {
-      showNotification('Export', 'PDF export feature coming soon!', 'info');
+      // Initialize jsPDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(40);
+      doc.text('Duty Calendar Report', 105, 15, { align: 'center' });
+      
+      // Add date
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 25, { align: 'center' });
+      
+      // Add summary stats
+      doc.setFontSize(14);
+      doc.setTextColor(40);
+      doc.text('Summary Statistics', 14, 35);
+      
+      const totalDuties = duties.length;
+      const currentMonthDuties = duties.filter(duty => {
+        const dutyDate = new Date(duty.date);
+        return dutyDate.getMonth() === currentMonth.getMonth() && 
+               dutyDate.getFullYear() === currentMonth.getFullYear();
+      }).length;
+      
+      const futureDuties = duties.filter(duty => new Date(duty.date) > new Date());
+      const nextDuty = futureDuties.length > 0 ? 
+        formatDate(futureDuties.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date) : 'None';
+      
+      const totalHours = duties.reduce((sum, duty) => {
+        const start = new Date(`2000-01-01T${duty.startTime}`);
+        const end = new Date(`2000-01-01T${duty.endTime}`);
+        const hours = (end - start) / (1000 * 60 * 60);
+        return sum + (hours > 0 ? hours : 0);
+      }, 0);
+      
+      const avgHours = duties.length > 0 ? Math.round(totalHours / duties.length) : 0;
+      
+      doc.setFontSize(12);
+      doc.text(`- Total Duties: ${totalDuties}`, 20, 45);
+      doc.text(`- This Month: ${currentMonthDuties}`, 20, 55);
+      doc.text(`- Next Duty: ${nextDuty}`, 20, 65);
+      doc.text(`- Average Hours: ${avgHours}`, 20, 75);
+      
+      // Add calendar month view
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(40);
+      doc.text(`Calendar: ${document.getElementById('calendarTitle').textContent}`, 105, 15, { align: 'center' });
+      
+      // Create calendar table
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const mondayFirstDay = (firstDay === 0) ? 6 : firstDay - 1;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const calendarData = [];
+      
+      // Add empty cells for days before the first day of the month
+      let currentRow = Array(7).fill('');
+      
+      // Add days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const duty = duties.find(d => d.date === dateStr);
+        
+        const dayOfWeek = new Date(dateStr).getDay();
+        const adjustedDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0
+        
+        if (day === 1) {
+          // Fill the beginning of the first row with empty cells
+          for (let i = 0; i < mondayFirstDay; i++) {
+            currentRow[i] = '';
+          }
+        }
+        
+        currentRow[adjustedDayOfWeek] = {
+          content: day.toString(),
+          styles: {
+            fillColor: duty ? [220, 255, 220] : undefined,
+            textColor: duty ? [0, 100, 0] : [0, 0, 0],
+            fontStyle: dateStr === getCurrentDate() ? 'bold' : 'normal'
+          }
+        };
+        
+        if (adjustedDayOfWeek === 6 || day === daysInMonth) {
+          calendarData.push([...currentRow]);
+          currentRow = Array(7).fill('');
+        }
+      }
+      
+      // Create the calendar table
+      doc.autoTable({
+        head: [dayNames],
+        body: calendarData,
+        startY: 25,
+        styles: {
+          halign: 'center',
+          valign: 'middle',
+          cellPadding: 5
+        },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 'auto' },
+          3: { cellWidth: 'auto' },
+          4: { cellWidth: 'auto' },
+          5: { cellWidth: 'auto' },
+          6: { cellWidth: 'auto' }
+        },
+        didDrawCell: (data) => {
+          // Add duty indicator
+          if (data.cell.raw && typeof data.cell.raw === 'object' && data.cell.raw.content) {
+            const day = parseInt(data.cell.raw.content);
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const duty = duties.find(d => d.date === dateStr);
+            
+            if (duty) {
+              doc.setFontSize(8);
+              doc.setTextColor(0, 100, 0);
+              doc.text(duty.startTime, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height - 5, {
+                align: 'center'
+              });
+            }
+          }
+        }
+      });
+      
+      // Add duties list
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(40);
+      doc.text('All Scheduled Duties', 105, 15, { align: 'center' });
+      
+      if (duties.length === 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text('No duties scheduled', 105, 30, { align: 'center' });
+      } else {
+        const dutiesData = duties.map(duty => [
+          formatDate(duty.date),
+          duty.startTime,
+          duty.endTime,
+          duty.type.charAt(0).toUpperCase() + duty.type.slice(1),
+          duty.notes || '-'
+        ]);
+        
+        doc.autoTable({
+          head: [['Date', 'Start', 'End', 'Type', 'Notes']],
+          body: dutiesData,
+          startY: 25,
+          styles: {
+            fontSize: 10,
+            cellPadding: 3,
+            overflow: 'linebreak'
+          },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 25 },
+            4: { cellWidth: 'auto' }
+          },
+          headStyles: {
+            fillColor: [59, 130, 246],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [240, 240, 240]
+          }
+        });
+      }
+      
+      // Save the PDF
+      doc.save(`DutyCalendar_${new Date().toISOString().slice(0, 10)}.pdf`);
+      
+      showNotification('Export Successful', 'PDF has been generated and downloaded', 'success');
     }
-    
+
     // Touch swipe functions
     function handleTouchStart(e) {
       touchStartX = e.changedTouches[0].screenX;
