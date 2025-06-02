@@ -954,7 +954,7 @@
           <div class="switch-container">
             <div class="switch-info">
               <div class="switch-title">Enable Notifications</div>
-              <div class="switch-description">Receive alerts 1 hour before duty</div>
+              <div class="switch-description">Receive alerts before duty starts</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="mobileNotificationToggle" onchange="toggleNotification('enabled')">
@@ -1086,7 +1086,7 @@
         <div class="switch-container">
           <div class="switch-info">
             <div class="switch-title">Enable Notifications</div>
-            <div class="switch-description">Receive alerts 1 hour before duty starts</div>
+            <div class="switch-description">Receive alerts before duty starts</div>
           </div>
           <label class="switch">
             <input type="checkbox" id="notificationToggle" onchange="toggleNotification('enabled')">
@@ -1161,6 +1161,7 @@
       dailySummary: false,
       overtime: false
     };
+    let notificationTimeouts = {};
     
     // Touch swipe variables
     let touchStartX = 0;
@@ -1175,6 +1176,10 @@
       return new Date(dateStr).toLocaleDateString();
     }
 
+    function formatTime(timeStr) {
+      return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
     function generateId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
@@ -1183,10 +1188,16 @@
     function saveDuties() {
       localStorage.setItem('duties', JSON.stringify(duties));
       updateStats();
+      scheduleAllNotifications();
     }
 
     function saveNotificationSettings() {
       localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+      if (notificationSettings.enabled) {
+        scheduleAllNotifications();
+      } else {
+        clearAllNotifications();
+      }
     }
 
     // Enhanced notification system for mobile
@@ -1204,18 +1215,28 @@
       if ('Notification' in window && notificationSettings.enabled) {
         requestNotificationPermission().then(permission => {
           if (permission === 'granted') {
-            new Notification(title, {
+            const options = {
               body: message,
               icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>',
-              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>'
-            });
+              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>',
+              vibrate: [200, 100, 200] // Vibration pattern for mobile devices
+            };
+            
+            // Show notification
+            new Notification(title, options);
+            
+            // Play sound if possible
+            if (typeof Audio !== 'undefined') {
+              const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+              audio.play().catch(e => console.log('Audio play failed:', e));
+            }
           }
         });
       }
       
       setTimeout(() => {
         hideNotification();
-      }, 3000);
+      }, 5000);
     }
 
     function hideNotification() {
@@ -1226,10 +1247,89 @@
     // Request notification permission
     async function requestNotificationPermission() {
       if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        return permission;
+        try {
+          const permission = await Notification.requestPermission();
+          return permission;
+        } catch (e) {
+          console.error('Notification permission error:', e);
+          return 'denied';
+        }
       }
       return 'denied';
+    }
+
+    // Schedule notifications for all duties
+    function scheduleAllNotifications() {
+      if (!notificationSettings.enabled) return;
+      
+      // Clear any existing notifications
+      clearAllNotifications();
+      
+      const now = new Date();
+      
+      duties.forEach(duty => {
+        const dutyDate = new Date(duty.date);
+        const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
+        
+        // Only schedule notifications for future duties
+        if (dutyDateTime > now) {
+          // Schedule 1 day before notification
+          const oneDayBefore = new Date(dutyDateTime);
+          oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+          
+          if (oneDayBefore > now) {
+            const timeoutId = setTimeout(() => {
+              showNotification(
+                'Upcoming Duty Tomorrow', 
+                `You have a ${duty.type} duty scheduled for tomorrow at ${formatTime(duty.startTime)}`,
+                'warning'
+              );
+            }, oneDayBefore - now);
+            
+            notificationTimeouts[`${duty.id}-1day`] = timeoutId;
+          }
+          
+          // Schedule 1 hour before notification
+          const oneHourBefore = new Date(dutyDateTime);
+          oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+          
+          if (oneHourBefore > now) {
+            const timeoutId = setTimeout(() => {
+              showNotification(
+                'Upcoming Duty in 1 Hour', 
+                `Your ${duty.type} duty starts at ${formatTime(duty.startTime)}`,
+                'warning'
+              );
+            }, oneHourBefore - now);
+            
+            notificationTimeouts[`${duty.id}-1hour`] = timeoutId;
+          }
+          
+          // Schedule 30 minutes before notification
+          const thirtyMinutesBefore = new Date(dutyDateTime);
+          thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
+          
+          if (thirtyMinutesBefore > now) {
+            const timeoutId = setTimeout(() => {
+              showNotification(
+                'Upcoming Duty in 30 Minutes', 
+                `Your ${duty.type} duty starts soon at ${formatTime(duty.startTime)}`,
+                'warning'
+              );
+            }, thirtyMinutesBefore - now);
+            
+            notificationTimeouts[`${duty.id}-30min`] = timeoutId;
+          }
+        }
+      });
+    }
+
+    // Clear all scheduled notifications
+    function clearAllNotifications() {
+      Object.keys(notificationTimeouts).forEach(key => {
+        clearTimeout(notificationTimeouts[key]);
+      });
+      notificationTimeouts = {};
     }
 
     // Mobile menu functions
@@ -1286,14 +1386,28 @@
       if (mobileToggle) mobileToggle.checked = notificationSettings[type];
       
       if (type === 'enabled' && notificationSettings[type]) {
-        requestNotificationPermission();
+        requestNotificationPermission().then(() => {
+          showNotification(
+            'Notifications Enabled',
+            'You will now receive reminders before your duties start',
+            'success'
+          );
+          scheduleAllNotifications();
+        });
+      } else if (type === 'enabled' && !notificationSettings[type]) {
+        clearAllNotifications();
+        showNotification(
+          'Notifications Disabled',
+          'You will no longer receive duty reminders',
+          'info'
+        );
+      } else {
+        showNotification(
+          'Settings Updated',
+          `${type === 'dailySummary' ? 'Daily Summary' : 'Overtime Alerts'} ${notificationSettings[type] ? 'enabled' : 'disabled'}`,
+          'success'
+        );
       }
-      
-      showNotification(
-        'Settings Updated',
-        `${type === 'enabled' ? 'Notifications' : type === 'dailySummary' ? 'Daily Summary' : 'Overtime Alerts'} ${notificationSettings[type] ? 'enabled' : 'disabled'}`,
-        'success'
-      );
     }
 
     // Duty management functions
@@ -1397,6 +1511,9 @@
         return;
       }
 
+      // Clear any notifications for this duty
+      clearDutyNotifications(duties[dutyIndex].id);
+      
       duties.splice(dutyIndex, 1);
       saveDuties();
       renderCalendar();
@@ -1416,11 +1533,25 @@
         return;
       }
 
+      // Clear any notifications for this duty
+      clearDutyNotifications(duties[dutyIndex].id);
+      
       duties.splice(dutyIndex, 1);
       saveDuties();
       renderCalendar();
       showNotification('Success', 'Duty removed successfully', 'success');
       toggleMobileMenu();
+    }
+
+    // Clear notifications for a specific duty
+    function clearDutyNotifications(dutyId) {
+      ['1day', '1hour', '30min'].forEach(period => {
+        const key = `${dutyId}-${period}`;
+        if (notificationTimeouts[key]) {
+          clearTimeout(notificationTimeouts[key]);
+          delete notificationTimeouts[key];
+        }
+      });
     }
 
     // Calendar functions
@@ -1536,7 +1667,7 @@
 
       const futureDuties = duties.filter(duty => new Date(duty.date) > currentDate);
       const nextDuty = futureDuties.length > 0 ? 
-        Math.min(...futureDuties.map(duty => new Date(duty.date).getDate())) : '--';
+        formatDate(futureDuties.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date) : '--';
 
       const totalHours = duties.reduce((sum, duty) => {
         const start = new Date(`2000-01-01T${duty.startTime}`);
@@ -1584,22 +1715,38 @@
     function exportToPDF() {
       // Initialize jsPDF
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
-      // Add title
-      doc.setFontSize(20);
+      // Add title with logo
+      doc.setFontSize(22);
       doc.setTextColor(40);
-      doc.text('Duty Calendar Report', 105, 15, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('Duty Calendar Report', 105, 20, { align: 'center' });
+      
+      // Add decorative line
+      doc.setDrawColor(59, 130, 246);
+      doc.setLineWidth(0.5);
+      doc.line(30, 25, 180, 25);
       
       // Add date
       doc.setFontSize(12);
       doc.setTextColor(100);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 25, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, 32, { align: 'center' });
       
-      // Add summary stats
-      doc.setFontSize(14);
+      // Add summary stats section
+      doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('Summary Statistics', 14, 35);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Summary Statistics', 20, 45);
+      
+      // Add summary box
+      doc.setFillColor(240, 240, 240);
+      doc.roundedRect(20, 50, 170, 30, 3, 3, 'F');
       
       const totalDuties = duties.length;
       const currentMonthDuties = duties.filter(duty => {
@@ -1622,16 +1769,19 @@
       const avgHours = duties.length > 0 ? Math.round(totalHours / duties.length) : 0;
       
       doc.setFontSize(12);
-      doc.text(`- Total Duties: ${totalDuties}`, 20, 45);
-      doc.text(`- This Month: ${currentMonthDuties}`, 20, 55);
-      doc.text(`- Next Duty: ${nextDuty}`, 20, 65);
-      doc.text(`- Average Hours: ${avgHours}`, 20, 75);
-      
-      // Add calendar month view
-      doc.addPage();
-      doc.setFontSize(14);
       doc.setTextColor(40);
-      doc.text(`Calendar: ${document.getElementById('calendarTitle').textContent}`, 105, 15, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total Duties: ${totalDuties}`, 30, 60);
+      doc.text(`This Month: ${currentMonthDuties}`, 30, 70);
+      doc.text(`Next Duty: ${nextDuty}`, 100, 60);
+      doc.text(`Average Hours: ${avgHours}`, 100, 70);
+      
+      // Add calendar month view section
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Calendar: ${document.getElementById('calendarTitle').textContent}`, 105, 20, { align: 'center' });
       
       // Create calendar table
       const year = currentMonth.getFullYear();
@@ -1664,9 +1814,10 @@
         currentRow[adjustedDayOfWeek] = {
           content: day.toString(),
           styles: {
-            fillColor: duty ? [220, 255, 220] : undefined,
+            fillColor: duty ? [220, 255, 220] : [255, 255, 255],
             textColor: duty ? [0, 100, 0] : [0, 0, 0],
-            fontStyle: dateStr === getCurrentDate() ? 'bold' : 'normal'
+            fontStyle: dateStr === getCurrentDate() ? 'bold' : 'normal',
+            cellPadding: 5
           }
         };
         
@@ -1680,11 +1831,17 @@
       doc.autoTable({
         head: [dayNames],
         body: calendarData,
-        startY: 25,
+        startY: 30,
         styles: {
           halign: 'center',
           valign: 'middle',
           cellPadding: 5
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'center'
         },
         columnStyles: {
           0: { cellWidth: 'auto' },
@@ -1713,15 +1870,17 @@
         }
       });
       
-      // Add duties list
+      // Add duties list section
       doc.addPage();
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setTextColor(40);
-      doc.text('All Scheduled Duties', 105, 15, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('All Scheduled Duties', 105, 20, { align: 'center' });
       
       if (duties.length === 0) {
         doc.setFontSize(12);
         doc.setTextColor(100);
+        doc.setFont('helvetica', 'normal');
         doc.text('No duties scheduled', 105, 30, { align: 'center' });
       } else {
         const dutiesData = duties.map(duty => [
@@ -1735,34 +1894,49 @@
         doc.autoTable({
           head: [['Date', 'Start', 'End', 'Type', 'Notes']],
           body: dutiesData,
-          startY: 25,
+          startY: 30,
           styles: {
             fontSize: 10,
-            cellPadding: 3,
-            overflow: 'linebreak'
+            cellPadding: 4,
+            overflow: 'linebreak',
+            valign: 'middle'
           },
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 20 },
-            2: { cellWidth: 20 },
-            3: { cellWidth: 25 },
-            4: { cellWidth: 'auto' }
+            0: { cellWidth: 25, halign: 'center' },
+            1: { cellWidth: 20, halign: 'center' },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'center' },
+            4: { cellWidth: 'auto', halign: 'left' }
           },
           headStyles: {
             fillColor: [59, 130, 246],
             textColor: [255, 255, 255],
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            halign: 'center'
           },
           alternateRowStyles: {
             fillColor: [240, 240, 240]
-          }
+          },
+          margin: { top: 10 }
         });
       }
       
-      // Save the PDF
-      doc.save(`DutyCalendar_${new Date().toISOString().slice(0, 10)}.pdf`);
+      // Add footer to each page
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: 'center' });
+        doc.text('Duty Calendar - Professional Scheduling', 20, 287);
+        doc.text(new Date().toLocaleDateString(), 190, 287, { align: 'right' });
+      }
       
-      showNotification('Export Successful', 'PDF has been generated and downloaded', 'success');
+      // Save the PDF
+      const fileName = `DutyCalendar_${new Date().toISOString().slice(0, 10)}.pdf`;
+      doc.save(fileName);
+      
+      showNotification('Export Successful', `PDF "${fileName}" has been generated and downloaded`, 'success');
     }
 
     // Touch swipe functions
@@ -1826,8 +2000,35 @@
       
       // Request notification permission if enabled
       if (notificationSettings.enabled) {
-        requestNotificationPermission();
+        requestNotificationPermission().then(() => {
+          scheduleAllNotifications();
+        });
       }
+      
+      // Check for notifications on page load
+      checkImmediateNotifications();
+    }
+
+    // Check for notifications that should trigger immediately
+    function checkImmediateNotifications() {
+      if (!notificationSettings.enabled) return;
+      
+      const now = new Date();
+      const oneDay = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+      
+      duties.forEach(duty => {
+        const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
+        const timeDiff = dutyDateTime - now;
+        
+        // If duty is within the next 5 minutes
+        if (timeDiff > 0 && timeDiff < 5 * 60 * 1000) {
+          showNotification(
+            'Duty Starting Soon', 
+            `Your ${duty.type} duty starts in ${Math.round(timeDiff / (60 * 1000))} minutes at ${formatTime(duty.startTime)}`,
+            'warning'
+          );
+        }
+      });
     }
 
     // Start the app
