@@ -422,6 +422,13 @@
       box-shadow: var(--shadow-md);
     }
 
+    /* Desktop Actions */
+    .desktop-actions {
+      display: none;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
     /* Mobile Actions */
     .mobile-actions {
       display: flex;
@@ -815,6 +822,10 @@
         display: none;
       }
       
+      .desktop-actions {
+        display: flex;
+      }
+      
       .stats-grid {
         grid-template-columns: repeat(4, 1fr);
       }
@@ -1063,7 +1074,7 @@
           <textarea id="dutyNotes" rows="2" placeholder="Add any additional notes..."></textarea>
         </div>
         
-        <div class="mobile-actions">
+        <div class="desktop-actions">
           <button class="btn btn-primary" onclick="addDuty()" id="addBtn">
             <span>➕</span> Add Duty
           </button>
@@ -2089,8 +2100,6 @@
     }
   }
 </style>
-
-
 
 </body>
 </html>
