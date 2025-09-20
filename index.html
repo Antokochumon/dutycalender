@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
- 
-
-  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#3b82f6">
@@ -13,6 +9,8 @@
   <!-- Add jsPDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <!-- Add Chart.js for analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary: #3b82f6;
@@ -30,6 +28,11 @@
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --overtime-color: #f97316;
+      --holiday-color: #8b5cf6;
+      --training-color: #06b6d4;
+      --meeting-color: #ec4899;
+      --emergency-color: #dc2626;
     }
 
     .dark {
@@ -300,6 +303,7 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 16px;
+      position: relative;
     }
 
     .card-icon {
@@ -644,9 +648,35 @@
       border-radius: 50%;
     }
 
-    .calendar-date.duty {
+    /* Different colors for different duty types */
+    .calendar-date.regular {
       background: rgba(34, 197, 94, 0.1);
       border-color: var(--success);
+    }
+
+    .calendar-date.overtime {
+      background: rgba(249, 115, 22, 0.1);
+      border-color: var(--overtime-color);
+    }
+
+    .calendar-date.holiday {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: var(--holiday-color);
+    }
+
+    .calendar-date.training {
+      background: rgba(6, 182, 212, 0.1);
+      border-color: var(--training-color);
+    }
+
+    .calendar-date.meeting {
+      background: rgba(236, 72, 153, 0.1);
+      border-color: var(--meeting-color);
+    }
+
+    .calendar-date.emergency {
+      background: rgba(220, 38, 38, 0.1);
+      border-color: var(--emergency-color);
     }
 
     /* Today with duty: green background, red number */
@@ -675,10 +705,277 @@
       font-weight: 400;
       margin-top: 3px;
       opacity: 0.9;
-      background: rgba(34, 197, 94, 0.2);
       padding: 2px 4px;
       border-radius: 3px;
       line-height: 1;
+    }
+
+    .regular .duty-time {
+      background: rgba(34, 197, 94, 0.2);
+    }
+
+    .overtime .duty-time {
+      background: rgba(249, 115, 22, 0.2);
+    }
+
+    .holiday .duty-time {
+      background: rgba(139, 92, 246, 0.2);
+    }
+
+    .training .duty-time {
+      background: rgba(6, 182, 212, 0.2);
+    }
+
+    .meeting .duty-time {
+      background: rgba(236, 72, 153, 0.2);
+    }
+
+    .emergency .duty-time {
+      background: rgba(220, 38, 38, 0.2);
+    }
+
+    /* Notes section - Removed from main interface */
+    .notes-container {
+      display: none; /* Hide notes container from main interface */
+    }
+
+    .note-item {
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--bg-tertiary);
+      margin-bottom: 8px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .note-date {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .note-content {
+      font-size: 14px;
+    }
+
+    .add-note-form {
+      margin-top: 12px;
+    }
+
+    /* Notes Popup */
+    .notes-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .notes-popup-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .notes-popup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .notes-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .notes-popup-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .close-notes-popup {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .close-notes-popup:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .notes-popup-content {
+      margin-bottom: 20px;
+    }
+
+    .notes-popup-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    /* Duty Management Popup */
+    .duty-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .duty-popup-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .duty-popup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .duty-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .duty-popup-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .close-duty-popup {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .close-duty-popup:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .duty-popup-content {
+      margin-bottom: 20px;
+    }
+
+    .duty-popup-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    /* Analytics modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .close-modal:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .chart-container {
+      margin: 20px 0;
+      height: 300px;
     }
 
     /* Notification */
@@ -810,6 +1107,21 @@
         width: 26px;
         height: 26px;
       }
+
+      .modal {
+        width: 95%;
+        padding: 16px;
+      }
+
+      .notes-popup {
+        width: 95%;
+        padding: 16px;
+      }
+
+      .duty-popup {
+        width: 95%;
+        padding: 16px;
+      }
     }
 
     @media (min-width: 769px) {
@@ -870,10 +1182,7 @@
     }
   </style>
 
-
 <script type='text/javascript' src='//pl27626941.revenuecpmgate.com/2d/67/9d/2d679d92fd1dd29218a14b5459c801a2.js'></script>
-
-
 	
 </head>
 <body>
@@ -941,9 +1250,10 @@
             <select id="mobileDutyType">
               <option value="regular">Regular Duty</option>
               <option value="overtime">Overtime</option>
-              <option value="emergency">Emergency</option>
+              <option value="holiday">Holiday</option>
               <option value="training">Training</option>
               <option value="meeting">Meeting</option>
+              <option value="emergery">Emergency</option>
             </select>
           </div>
 
@@ -1008,7 +1318,7 @@
 
         <!-- Other Actions -->
         <div class="menu-actions">
-          <button class="btn btn-secondary" onclick="showStats(); toggleMobileMenu();">
+          <button class="btn btn-secondary" onclick="showAnalytics(); toggleMobileMenu();">
             <span>📊</span> View Analytics
           </button>
           <button class="btn btn-outline" onclick="exportToPDF(); toggleMobileMenu();">
@@ -1016,6 +1326,9 @@
           </button>
           <button class="btn btn-outline" onclick="toggleTheme();">
             <span id="mobileThemeIcon">🌙</span> <span id="mobileThemeText">Toggle Theme</span>
+          </button>
+          <button class="btn btn-outline" onclick="showNotesView(); toggleMobileMenu();">
+            <span>📝</span> View All Notes
           </button>
         </div>
       </div>
@@ -1073,9 +1386,10 @@
           <select id="dutyType">
             <option value="regular">Regular Duty</option>
             <option value="overtime">Overtime</option>
-            <option value="emergency">Emergency</option>
+            <option value="holiday">Holiday</option>
             <option value="training">Training</option>
             <option value="meeting">Meeting</option>
+            <option value="emergency">Emergency</option>
           </select>
         </div>
 
@@ -1090,6 +1404,9 @@
           </button>
           <button class="btn btn-danger" onclick="removeDuty()" id="removeBtn">
             <span>🗑️</span> Remove
+          </button>
+          <button class="btn btn-outline" onclick="showNotesView()">
+            <span>📝</span> View Notes
           </button>
         </div>
       </div>
@@ -1161,6 +1478,160 @@
     </main>
   </div>
 
+  <!-- Notes Popup -->
+  <div class="notes-popup-overlay" id="notesPopup" onclick="closeNotesPopupOnBackdrop(event)">
+    <div class="notes-popup">
+      <div class="notes-popup-header">
+        <div class="notes-popup-title" id="notesPopupTitle">Notes for <span id="notesPopupDate"></span></div>
+        <button class="close-notes-popup" onclick="hideNotesPopup()" aria-label="Close notes popup">×</button>
+      </div>
+
+      <div class="notes-popup-content">
+        <div id="existingNotesContainer">
+          <h4 style="margin-bottom: 12px;">Existing Notes</h4>
+          <div id="existingNotesList"></div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 20px;">
+          <label for="notesPopupContent">Add New Note</label>
+          <textarea id="notesPopupContent" rows="4" placeholder="Write your note here..."></textarea>
+        </div>
+      </div>
+
+      <div class="notes-popup-actions">
+        <button class="btn btn-primary" onclick="saveNoteFromPopup()">Save Note</button>
+        <button class="btn btn-outline" onclick="hideNotesPopup()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Notes View Popup -->
+  <div class="notes-popup-overlay" id="allNotesPopup" onclick="closeAllNotesPopupOnBackdrop(event)">
+    <div class="notes-popup">
+      <div class="notes-popup-header">
+        <div class="notes-popup-title">All Notes</div>
+        <button class="close-notes-popup" onclick="hideAllNotesPopup()" aria-label="Close all notes popup">×</button>
+      </div>
+
+      <div class="notes-popup-content">
+        <div id="allNotesList" style="max-height: 300px; overflow-y: auto;">
+          <!-- All notes will be populated here -->
+        </div>
+        
+        <div class="form-group" style="margin-top: 20px;">
+          <label for="newNoteDate">📅 Date</label>
+          <input type="date" id="newNoteDate" required>
+        </div>
+        <div class="form-group">
+          <label for="newNoteContent">Add New Note</label>
+          <textarea id="newNoteContent" rows="4" placeholder="Write your note here..."></textarea>
+        </div>
+      </div>
+
+      <div class="notes-popup-actions">
+        <button class="btn btn-primary" onclick="addNewNote()">Add Note</button>
+        <button class="btn btn-outline" onclick="hideAllNotesPopup()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Duty Management Popup -->
+  <div class="duty-popup-overlay" id="dutyPopup" onclick="closeDutyPopupOnBackdrop(event)">
+    <div class="duty-popup">
+      <div class="duty-popup-header">
+        <div class="duty-popup-title">Duty for <span id="dutyPopupDate"></span></div>
+        <button class="close-duty-popup" onclick="hideDutyPopup()" aria-label="Close duty popup">×</button>
+      </div>
+
+      <div class="duty-popup-content">
+        <div id="existingDutyContainer">
+          <h4 style="margin-bottom: 12px;">Existing Duty</h4>
+          <div id="existingDutyInfo"></div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 20px;">
+          <label for="popupStartTime">🕐 Start Time</label>
+          <input type="time" id="popupStartTime" value="08:00" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="popupEndTime">🕔 End Time</label>
+          <input type="time" id="popupEndTime" value="17:00" required>
+        </div>
+
+        <div class="form-group">
+          <label for="popupDutyType">🏷️ Duty Type</label>
+          <select id="popupDutyType">
+            <option value="regular">Regular Duty</option>
+            <option value="overtime">Overtime</option>
+            <option value="holiday">Holiday</option>
+            <option value="training">Training</option>
+            <option value="meeting">Meeting</option>
+            <option value="emergency">Emergency</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="popupDutyNotes">📝 Notes (Optional)</label>
+          <textarea id="popupDutyNotes" rows="2" placeholder="Add any additional notes..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <button class="btn btn-outline" style="width: 100%;" onclick="showNotesPopup(selectedDate)">
+            <span>📝</span> Manage Notes for This Date
+          </button>
+        </div>
+      </div>
+
+      <div class="duty-popup-actions">
+        <button class="btn btn-primary" onclick="saveDutyFromPopup()" id="popupSaveBtn">
+          <span>💾</span> Save Duty
+        </button>
+        <button class="btn btn-danger" onclick="deleteDutyFromPopup()" id="popupDeleteBtn" style="display: none;">
+          <span>🗑️</span> Delete Duty
+        </button>
+        <button class="btn btn-outline" onclick="hideDutyPopup()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Modal -->
+  <div class="modal-overlay" id="analyticsModal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Duty Analytics</div>
+        <button class="close-modal" onclick="hideAnalytics()" aria-label="Close modal">×</button>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="dutyTypeChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="monthlyHoursChart"></canvas>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalHours">0</div>
+          <div class="stat-label">Total Hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="overtimeHours">0</div>
+          <div class="stat-label">Overtime Hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="holidayCount">0</div>
+          <div class="stat-label">Holidays</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgDutyLength">0</div>
+          <div class="stat-label">Avg Duty Length</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification -->
   <div class="notification" id="notification">
     <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -1175,6 +1646,7 @@
   <script>
     // Global variables
     let duties = JSON.parse(localStorage.getItem('duties')) || [];
+    let notes = JSON.parse(localStorage.getItem('dutyNotes')) || [];
     let currentMonth = new Date();
     let selectedDate = getCurrentDate();
     let notificationSettings = JSON.parse(localStorage.getItem('notificationSettings')) || {
@@ -1210,6 +1682,10 @@
       localStorage.setItem('duties', JSON.stringify(duties));
       updateStats();
       scheduleAllNotifications();
+    }
+
+    function saveNotes() {
+      localStorage.setItem('dutyNotes', JSON.stringify(notes));
     }
 
     function saveNotificationSettings() {
@@ -1575,6 +2051,303 @@
       });
     }
 
+    // Notes functions
+    function showNotesView() {
+      const popup = document.getElementById('allNotesPopup');
+      popup.classList.add('active');
+      renderAllNotes();
+    }
+
+    function hideAllNotesPopup() {
+      const popup = document.getElementById('allNotesPopup');
+      popup.classList.remove('active');
+    }
+
+    function closeAllNotesPopupOnBackdrop(event) {
+      if (event.target === event.currentTarget) {
+        hideAllNotesPopup();
+      }
+    }
+
+    function renderAllNotes() {
+      const notesList = document.getElementById('allNotesList');
+      notesList.innerHTML = '';
+
+      // Sort notes by date (newest first)
+      const sortedNotes = [...notes].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      if (sortedNotes.length === 0) {
+        notesList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No notes yet. Add your first note!</div>';
+        return;
+      }
+
+      sortedNotes.forEach(note => {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note-item';
+        noteElement.innerHTML = `
+          <div class="note-date">${formatDate(note.date)}</div>
+          <div class="note-content">${note.content}</div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNoteFromAllView('${note.id}')">
+              <span>🗑️</span> Delete
+            </button>
+          </div>
+        `;
+        notesList.appendChild(noteElement);
+      });
+    }
+
+    function addNewNote() {
+      const date = document.getElementById('newNoteDate').value;
+      const content = document.getElementById('newNoteContent').value;
+
+      if (!date || !content) {
+        showNotification('Error', 'Please fill in all fields', 'error');
+        return;
+      }
+
+      const newNote = {
+        id: generateId(),
+        date,
+        content,
+        createdAt: new Date().toISOString()
+      };
+
+      notes.push(newNote);
+      saveNotes();
+      
+      // Clear form
+      document.getElementById('newNoteDate').value = '';
+      document.getElementById('newNoteContent').value = '';
+      
+      // Refresh notes list
+      renderAllNotes();
+      
+      showNotification('Success', 'Note added successfully', 'success');
+    }
+
+    function deleteNoteFromAllView(noteId) {
+      const noteIndex = notes.findIndex(note => note.id === noteId);
+      
+      if (noteIndex !== -1) {
+        notes.splice(noteIndex, 1);
+        saveNotes();
+        renderAllNotes();
+        showNotification('Success', 'Note deleted successfully', 'success');
+      }
+    }
+
+    // Notes Popup Functions
+    function showNotesPopup(dateStr) {
+      selectedDate = dateStr;
+      const popup = document.getElementById('notesPopup');
+      const title = document.getElementById('notesPopupTitle');
+      const dateSpan = document.getElementById('notesPopupDate');
+      
+      dateSpan.textContent = formatDate(dateStr);
+      popup.classList.add('active');
+      
+      // Load existing notes for this date
+      renderExistingNotes(dateStr);
+      
+      // Clear the textarea
+      document.getElementById('notesPopupContent').value = '';
+    }
+
+    function hideNotesPopup() {
+      const popup = document.getElementById('notesPopup');
+      popup.classList.remove('active');
+    }
+
+    function closeNotesPopupOnBackdrop(event) {
+      if (event.target === event.currentTarget) {
+        hideNotesPopup();
+      }
+    }
+
+    function renderExistingNotes(dateStr) {
+      const notesList = document.getElementById('existingNotesList');
+      notesList.innerHTML = '';
+      
+      // Get notes for this date
+      const dateNotes = notes.filter(note => note.date === dateStr);
+      
+      if (dateNotes.length === 0) {
+        notesList.innerHTML = '<div style="text-align: center; padding: 10px; color: var(--text-secondary);">No notes for this date</div>';
+        return;
+      }
+      
+      dateNotes.forEach(note => {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note-item';
+        noteElement.innerHTML = `
+          <div class="note-content">${note.content}</div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNote('${note.id}')">
+              <span>🗑️</span> Delete
+            </button>
+          </div>
+        `;
+        notesList.appendChild(noteElement);
+      });
+    }
+
+    function saveNoteFromPopup() {
+      const content = document.getElementById('notesPopupContent').value;
+      
+      if (!content) {
+        showNotification('Error', 'Please enter a note', 'error');
+        return;
+      }
+
+      const newNote = {
+        id: generateId(),
+        date: selectedDate,
+        content,
+        createdAt: new Date().toISOString()
+      };
+
+      notes.push(newNote);
+      saveNotes();
+      renderExistingNotes(selectedDate);
+      document.getElementById('notesPopupContent').value = '';
+      showNotification('Success', 'Note added successfully', 'success');
+    }
+
+    function deleteNote(noteId) {
+      const noteIndex = notes.findIndex(note => note.id === noteId);
+      
+      if (noteIndex !== -1) {
+        notes.splice(noteIndex, 1);
+        saveNotes();
+        renderExistingNotes(selectedDate);
+        showNotification('Success', 'Note deleted successfully', 'success');
+      }
+    }
+
+    // Duty Popup Functions
+    function showDutyPopup(dateStr) {
+      selectedDate = dateStr;
+      const popup = document.getElementById('dutyPopup');
+      const dateSpan = document.getElementById('dutyPopupDate');
+      
+      dateSpan.textContent = formatDate(dateStr);
+      popup.classList.add('active');
+      
+      // Load existing duty for this date
+      renderExistingDuty(dateStr);
+    }
+
+    function hideDutyPopup() {
+      const popup = document.getElementById('dutyPopup');
+      popup.classList.remove('active');
+    }
+
+    function closeDutyPopupOnBackdrop(event) {
+      if (event.target === event.currentTarget) {
+        hideDutyPopup();
+      }
+    }
+
+    function renderExistingDuty(dateStr) {
+      const dutyInfo = document.getElementById('existingDutyInfo');
+      const deleteBtn = document.getElementById('popupDeleteBtn');
+      
+      // Get duty for this date
+      const duty = duties.find(d => d.date === dateStr);
+      
+      if (duty) {
+        dutyInfo.innerHTML = `
+          <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <strong>${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} Duty</strong>
+              <span>${duty.startTime} - ${duty.endTime}</span>
+            </div>
+            ${duty.notes ? `<div style="font-size: 14px;">${duty.notes}</div>` : ''}
+          </div>
+        `;
+        deleteBtn.style.display = 'block';
+        
+        // Pre-fill form with existing duty data
+        document.getElementById('popupStartTime').value = duty.startTime;
+        document.getElementById('popupEndTime').value = duty.endTime;
+        document.getElementById('popupDutyType').value = duty.type;
+        document.getElementById('popupDutyNotes').value = duty.notes || '';
+      } else {
+        dutyInfo.innerHTML = '<div style="text-align: center; padding: 10px; color: var(--text-secondary);">No duty scheduled for this date</div>';
+        deleteBtn.style.display = 'none';
+        
+        // Reset form to default values
+        document.getElementById('popupStartTime').value = '08:00';
+        document.getElementById('popupEndTime').value = '17:00';
+        document.getElementById('popupDutyType').value = 'regular';
+        document.getElementById('popupDutyNotes').value = '';
+      }
+    }
+
+    function saveDutyFromPopup() {
+      const date = selectedDate;
+      const startTime = document.getElementById('popupStartTime').value;
+      const endTime = document.getElementById('popupEndTime').value;
+      const type = document.getElementById('popupDutyType').value;
+      const notes = document.getElementById('popupDutyNotes').value;
+
+      if (!date || !startTime || !endTime) {
+        showNotification('Error', 'Please fill in all required fields', 'error');
+        return;
+      }
+
+      // Check if duty already exists for this date
+      const existingDutyIndex = duties.findIndex(duty => duty.date === date);
+      
+      if (existingDutyIndex !== -1) {
+        // Update existing duty
+        duties[existingDutyIndex] = {
+          ...duties[existingDutyIndex],
+          startTime,
+          endTime,
+          type,
+          notes
+        };
+      } else {
+        // Create new duty
+        const newDuty = {
+          id: generateId(),
+          date,
+          startTime,
+          endTime,
+          type,
+          notes,
+          createdAt: new Date().toISOString()
+        };
+        duties.push(newDuty);
+      }
+      
+      saveDuties();
+      renderCalendar();
+      hideDutyPopup();
+      showNotification('Success', 'Duty saved successfully', 'success');
+    }
+
+    function deleteDutyFromPopup() {
+      const date = selectedDate;
+      
+      const dutyIndex = duties.findIndex(duty => duty.date === date);
+      if (dutyIndex === -1) {
+        showNotification('Error', 'No duty found for this date', 'error');
+        return;
+      }
+
+      // Clear any notifications for this duty
+      clearDutyNotifications(duties[dutyIndex].id);
+      
+      duties.splice(dutyIndex, 1);
+      saveDuties();
+      renderCalendar();
+      hideDutyPopup();
+      showNotification('Success', 'Duty deleted successfully', 'success');
+    }
+
     // Calendar functions
     function changeMonth(direction) {
       currentMonth.setMonth(currentMonth.getMonth() + direction);
@@ -1587,6 +2360,9 @@
       // Update form dates
       document.getElementById('dutyDate').value = dateStr;
       document.getElementById('mobileDutyDate').value = dateStr;
+      
+      // Show duty popup instead of notes popup
+      showDutyPopup(dateStr);
       
       // Show duty info if exists
       const duty = duties.find(d => d.date === dateStr);
@@ -1646,6 +2422,7 @@
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const duty = duties.find(d => d.date === dateStr);
+        const dateNotes = notes.filter(note => note.date === dateStr);
         
         const dateElement = document.createElement('div');
         let classes = 'calendar-date';
@@ -1655,7 +2432,7 @@
         }
         
         if (duty) {
-          classes += ' duty';
+          classes += ' duty ' + duty.type;
         }
         
         dateElement.className = classes;
@@ -1665,6 +2442,15 @@
         dateNumber.className = 'date-number';
         dateNumber.textContent = day;
         dateElement.appendChild(dateNumber);
+        
+        // Add note indicator if there are notes for this date
+        if (dateNotes.length > 0) {
+          const noteIndicator = document.createElement('div');
+          noteIndicator.className = 'duty-time';
+          noteIndicator.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+          noteIndicator.textContent = '📝 ' + dateNotes.length;
+          dateElement.appendChild(noteIndicator);
+        }
         
         if (duty) {
           const dutyTime = document.createElement('div');
@@ -1705,32 +2491,179 @@
       document.getElementById('avgHours').textContent = avgHours;
     }
 
-    function showStats() {
-      const stats = `
-        Total Duties: ${duties.length}
-        This Month: ${duties.filter(duty => {
-          const dutyDate = new Date(duty.date);
-          const now = new Date();
-          return dutyDate.getMonth() === now.getMonth() && dutyDate.getFullYear() === now.getFullYear();
-        }).length}
-        
-        Upcoming Duties: ${duties.filter(duty => new Date(duty.date) > new Date()).length}
-        
-        Most Common Type: ${getMostCommonDutyType()}
-      `;
-      
-      showNotification('Analytics', stats, 'info');
+    // Analytics functions
+    function showAnalytics() {
+      const modal = document.getElementById('analyticsModal');
+      modal.classList.add('active');
+      renderAnalytics();
     }
 
-    function getMostCommonDutyType() {
-      if (duties.length === 0) return 'None';
-      
-      const types = {};
+    function hideAnalytics() {
+      const modal = document.getElementById('analyticsModal');
+      modal.classList.remove('active');
+    }
+
+    function closeModalOnBackdrop(event) {
+      if (event.target === event.currentTarget) {
+        hideAnalytics();
+      }
+    }
+
+    function renderAnalytics() {
+      // Calculate analytics data
+      const dutyTypes = {
+        regular: 0,
+        overtime: 0,
+        holiday: 0,
+        training: 0,
+        meeting: 0,
+        emergency: 0
+      };
+
+      let totalHours = 0;
+      let overtimeHours = 0;
+      let holidayCount = 0;
+      let totalDutyLength = 0;
+
       duties.forEach(duty => {
-        types[duty.type] = (types[duty.type] || 0) + 1;
+        // Count duty types
+        dutyTypes[duty.type] = (dutyTypes[duty.type] || 0) + 1;
+        
+        // Calculate hours
+        const start = new Date(`2000-01-01T${duty.startTime}`);
+        const end = new Date(`2000-01-01T${duty.endTime}`);
+        const hours = (end - start) / (1000 * 60 * 60);
+        
+        totalHours += hours;
+        totalDutyLength += hours;
+        
+        if (duty.type === 'overtime') {
+          overtimeHours += hours;
+        }
+        
+        if (duty.type === 'holiday') {
+          holidayCount++;
+        }
+      });
+
+      const avgDutyLength = duties.length > 0 ? (totalDutyLength / duties.length).toFixed(1) : 0;
+
+      // Update stats
+      document.getElementById('totalHours').textContent = Math.round(totalHours);
+      document.getElementById('overtimeHours').textContent = Math.round(overtimeHours);
+      document.getElementById('holidayCount').textContent = holidayCount;
+      document.getElementById('avgDutyLength').textContent = avgDutyLength;
+
+      // Render duty type chart
+      const dutyTypeCtx = document.getElementById('dutyTypeChart').getContext('2d');
+      
+      // Destroy existing chart if it exists
+      if (window.dutyTypeChartInstance) {
+        window.dutyTypeChartInstance.destroy();
+      }
+      
+      const typeColors = [
+        'rgba(34, 197, 94, 0.7)',   // regular - green
+        'rgba(249, 115, 22, 0.7)',  // overtime - orange
+        'rgba(139, 92, 246, 0.7)',  // holiday - purple
+        'rgba(6, 182, 212, 0.7)',   // training - cyan
+        'rgba(236, 72, 153, 0.7)',  // meeting - pink
+        'rgba(220, 38, 38, 0.7)'    // emergency - red
+      ];
+      
+      window.dutyTypeChartInstance = new Chart(dutyTypeCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Regular', 'Overtime', 'Holiday', 'Training', 'Meeting', 'Emergency'],
+          datasets: [{
+            data: [
+              dutyTypes.regular,
+              dutyTypes.overtime,
+              dutyTypes.holiday,
+              dutyTypes.training,
+              dutyTypes.meeting,
+              dutyTypes.emergency
+            ],
+            backgroundColor: typeColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Duty Types Distribution',
+              font: {
+                size: 16
+              }
+            },
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+
+      // Render monthly hours chart
+      const monthlyHoursCtx = document.getElementById('monthlyHoursChart').getContext('2d');
+      
+      // Destroy existing chart if it exists
+      if (window.monthlyHoursChartInstance) {
+        window.monthlyHoursChartInstance.destroy();
+      }
+      
+      // Calculate monthly hours
+      const monthlyHours = Array(12).fill(0);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      duties.forEach(duty => {
+        const dutyDate = new Date(duty.date);
+        const month = dutyDate.getMonth();
+        
+        const start = new Date(`2000-01-01T${duty.startTime}`);
+        const end = new Date(`2000-01-01T${duty.endTime}`);
+        const hours = (end - start) / (1000 * 60 * 60);
+        
+        monthlyHours[month] += hours;
       });
       
-      return Object.keys(types).reduce((a, b) => types[a] > types[b] ? a : b);
+      window.monthlyHoursChartInstance = new Chart(monthlyHoursCtx, {
+        type: 'bar',
+        data: {
+          labels: monthNames,
+          datasets: [{
+            label: 'Hours',
+            data: monthlyHours,
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Monthly Hours',
+              font: {
+                size: 16
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Hours'
+              }
+            }
+          }
+        }
+      });
     }
 
     function exportToPDF() {
@@ -1821,6 +2754,7 @@
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const duty = duties.find(d => d.date === dateStr);
+        const dateNotes = notes.filter(note => note.date === dateStr);
         
         const dayOfWeek = new Date(dateStr).getDay();
         const adjustedDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0
@@ -1832,8 +2766,13 @@
           }
         }
         
+        let cellContent = day.toString();
+        if (dateNotes.length > 0) {
+          cellContent += ` (${dateNotes.length}📝)`;
+        }
+        
         currentRow[adjustedDayOfWeek] = {
-          content: day.toString(),
+          content: cellContent,
           styles: {
             fillColor: duty ? [220, 255, 220] : [255, 255, 255],
             textColor: duty ? [0, 100, 0] : [0, 0, 0],
@@ -1928,6 +2867,51 @@
             2: { cellWidth: 20, halign: 'center' },
             3: { cellWidth: 25, halign: 'center' },
             4: { cellWidth: 'auto', halign: 'left' }
+          },
+          headStyles: {
+            fillColor: [59, 130, 246],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          alternateRowStyles: {
+            fillColor: [240, 240, 240]
+          },
+          margin: { top: 10 }
+        });
+      }
+      
+      // Add notes section
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Notes', 105, 20, { align: 'center' });
+      
+      if (notes.length === 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.setFont('helvetica', 'normal');
+        doc.text('No notes available', 105, 30, { align: 'center' });
+      } else {
+        const notesData = notes.map(note => [
+          formatDate(note.date),
+          note.content
+        ]);
+        
+        doc.autoTable({
+          head: [['Date', 'Note']],
+          body: notesData,
+          startY: 30,
+          styles: {
+            fontSize: 10,
+            cellPadding: 4,
+            overflow: 'linebreak',
+            valign: 'middle'
+          },
+          columnStyles: {
+            0: { cellWidth: 30, halign: 'center' },
+            1: { cellWidth: 'auto', halign: 'left' }
           },
           headStyles: {
             fillColor: [59, 130, 246],
@@ -2113,14 +3097,8 @@
   }
 </style>
 
-
- 
-  
 </body>
 </html>
-
-
-
 
 
 
