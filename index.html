@@ -5,13 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#3b82f6">
   <meta name="description" content="Professional Duty Calendar App - Advanced scheduling with smart reminders">
-  <title>Duty Calendar 2025</title>
+  <meta name="onesignal" content="true">
+  <title>Duty Calendar 2026</title>
+  
+  <!-- OneSignal SDK for push notifications - MUST load first -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  
   <!-- Add jsPDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  
   <!-- Add Chart.js for analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
+    /* Your existing CSS - keep as is */
     :root {
       --primary: #3b82f6;
       --secondary: #10b981;
@@ -33,10 +41,14 @@
       --training-color: #06b6d4;
       --meeting-color: #ec4899;
       --emergency-color: #dc2626;
+      --glass-text-light: rgba(30, 41, 59, 0.8);
+      --glass-text-light-alt: rgba(59, 130, 246, 0.8);
     }
 
     .dark {
       --bg-primary: #0f172a;
+      --glass-text-dark: rgba(248, 250, 252, 0.8);
+      --glass-text-dark-alt: rgba(100, 116, 139, 0.8);
       --bg-secondary: #1e293b;
       --bg-tertiary: #334155;
       --text-primary: #f8fafc;
@@ -44,12 +56,7 @@
       --border-light: #334155;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg-primary);
@@ -63,13 +70,7 @@
       overflow-x: hidden;
       transition: all 0.3s ease;
     }
-
-    .container {
-      max-width: 100%;
-      margin: 0 auto;
-    }
-
-    /* Header */
+    .container { max-width: 100%; margin: 0 auto; }
     .header {
       display: flex;
       align-items: center;
@@ -81,1145 +82,218 @@
       border: 1px solid var(--border-light);
       box-shadow: var(--shadow-sm);
     }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .logo-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
-    .logo-text h1 {
-      font-size: 20px;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .logo-text .subtitle {
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .theme-toggle {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-light);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: none;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .theme-toggle:hover {
-      background: var(--bg-primary);
-      transform: translateY(-1px);
-    }
-
-    .menu-toggle {
-      background: var(--primary);
-      color: white;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      font-size: 18px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .menu-toggle:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    /* Mobile Menu */
-    .mobile-menu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .mobile-menu.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .mobile-menu-content {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-light);
-      box-shadow: var(--shadow-lg);
-      padding: 20px;
-      transform: translateY(-100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(10px);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .mobile-menu.active .mobile-menu-content {
-      transform: translateY(0);
-    }
-
-    .mobile-menu-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .mobile-menu-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .close-menu {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .close-menu:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    /* Stats Grid - Smaller size */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .stat-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-    }
-
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .stat-number {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 2px;
-      line-height: 1;
-    }
-
-    .stat-label {
-      font-size: 9px;
-      color: var(--text-secondary);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    /* Cards */
-    .card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s ease;
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-1px);
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-      position: relative;
-    }
-
-    .card-icon {
-      font-size: 20px;
-    }
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .card-description {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-top: 2px;
-    }
-
-    /* Form Elements */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border-light);
-      border-radius: 8px;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 14px;
-      font-family: inherit;
-      transition: all 0.2s ease;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      background: var(--bg-secondary);
-    }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      min-height: 44px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: #2563eb;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-secondary {
-      background: var(--secondary);
-      color: white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: #059669;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: #dc2626;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-outline {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-light);
-    }
-
-    .btn-outline:hover:not(:disabled) {
-      background: var(--bg-tertiary);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    /* Desktop Actions */
-    .desktop-actions {
-      display: none;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    /* Mobile Actions */
-    .mobile-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .mobile-actions .btn {
-      flex: 1;
-    }
-
-    .menu-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    .menu-actions .btn {
-      width: 100%;
-      justify-content: flex-start;
-    }
-
-    /* Switch Component */
-    .switch-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 12px;
-      background: var(--bg-tertiary);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .switch-info {
-      flex: 1;
-    }
-
-    .switch-title {
-      font-weight: 500;
-      font-size: 14px;
-      margin-bottom: 2px;
-    }
-
-    .switch-description {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .switch {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .switch-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #ccc;
-      transition: 0.3s;
-      border-radius: 12px;
-    }
-
-    .switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      transition: 0.3s;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    input:checked + .switch-slider {
-      background: var(--primary);
-    }
-
-    input:checked + .switch-slider:before {
-      transform: translateX(20px);
-    }
-
-    /* Calendar - Increased height and spacing */
-    .calendar-container {
-      margin-top: 16px;
-    }
-
-    .calendar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      padding: 0 4px;
-    }
-
-    .calendar-nav-btn {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      color: var(--text-primary);
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .calendar-nav-btn:hover {
-      background: var(--bg-tertiary);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .calendar-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--primary);
-      text-align: center;
-      flex: 1;
-      margin: 0 12px;
-    }
-
-    /* Calendar Grid with better spacing */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border-light);
-      min-height: 420px;
-    }
-
-    .calendar-day-name {
-      font-weight: 600;
-      font-size: 12px;
-      text-align: center;
-      padding: 12px 0;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .calendar-date {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-light);
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      font-weight: 500;
-      min-height: 55px;
-      font-size: 14px;
-      margin: 2px;
-    }
-
-    .calendar-date:hover {
-      background: var(--bg-tertiary);
-      transform: scale(1.02);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .calendar-date.other-month {
-      opacity: 0.3;
-      pointer-events: none;
-    }
-
-    /* Enhanced Current Date and Duty Styling */
-    .calendar-date.today {
-      border-color: var(--current-red);
-      font-weight: 700;
-    }
-
-    .calendar-date.today .date-number {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 30px;
-      background: var(--current-red);
-      color: white;
-      border-radius: 50%;
-    }
-
-    /* Different colors for different duty types */
-    .calendar-date.regular {
-      background: rgba(34, 197, 94, 0.1);
-      border-color: var(--success);
-    }
-
-    .calendar-date.overtime {
-      background: rgba(249, 115, 22, 0.1);
-      border-color: var(--overtime-color);
-    }
-
-    .calendar-date.holiday {
-      background: rgba(139, 92, 246, 0.1);
-      border-color: var(--holiday-color);
-    }
-
-    .calendar-date.training {
-      background: rgba(6, 182, 212, 0.1);
-      border-color: var(--training-color);
-    }
-
-    .calendar-date.meeting {
-      background: rgba(236, 72, 153, 0.1);
-      border-color: var(--meeting-color);
-    }
-
-    .calendar-date.emergency {
-      background: rgba(220, 38, 38, 0.1);
-      border-color: var(--emergency-color);
-    }
-
-    /* Today with duty: green background, red number */
-    .calendar-date.duty.today {
-      background: rgba(34, 197, 94, 0.2);
-      border-color: var(--success);
-    }
-
-    .calendar-date.duty.today .date-number {
-      background: var(--success);
-      color: var(--current-red);
-      font-weight: 700;
-    }
-
-    /* Remove the selected class functionality */
-    .date-number {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 30px;
-    }
-
-    .duty-time {
-      font-size: 10px;
-      font-weight: 400;
-      margin-top: 3px;
-      opacity: 0.9;
-      padding: 2px 4px;
-      border-radius: 3px;
-      line-height: 1;
-    }
-
-    .regular .duty-time {
-      background: rgba(34, 197, 94, 0.2);
-    }
-
-    .overtime .duty-time {
-      background: rgba(249, 115, 22, 0.2);
-    }
-
-    .holiday .duty-time {
-      background: rgba(139, 92, 246, 0.2);
-    }
-
-    .training .duty-time {
-      background: rgba(6, 182, 212, 0.2);
-    }
-
-    .meeting .duty-time {
-      background: rgba(236, 72, 153, 0.2);
-    }
-
-    .emergency .duty-time {
-      background: rgba(220, 38, 38, 0.2);
-    }
-
-    /* Notes section - Removed from main interface */
-    .notes-container {
-      display: none; /* Hide notes container from main interface */
-    }
-
-    .note-item {
-      padding: 10px;
-      border-radius: 8px;
-      background: var(--bg-tertiary);
-      margin-bottom: 8px;
-      border-left: 3px solid var(--primary);
-    }
-
-    .note-date {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
-
-    .note-content {
-      font-size: 14px;
-    }
-
-    .add-note-form {
-      margin-top: 12px;
-    }
-
-    /* Notes Popup */
-    .notes-popup-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .notes-popup-overlay.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .notes-popup {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .notes-popup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .notes-popup-title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .close-notes-popup {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .close-notes-popup:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .notes-popup-content {
-      margin-bottom: 20px;
-    }
-
-    .notes-popup-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-    }
-
-    /* Duty Management Popup */
-    .duty-popup-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .duty-popup-overlay.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .duty-popup {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .duty-popup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .duty-popup-title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .close-duty-popup {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .close-duty-popup:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .duty-popup-content {
-      margin-bottom: 20px;
-    }
-
-    .duty-popup-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-    }
-
-    /* Analytics modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .modal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90%;
-      max-width: 600px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .modal-title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .close-modal {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .close-modal:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .chart-container {
-      margin: 20px 0;
-      height: 300px;
-    }
-
-    /* Notification */
-    .notification {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: var(--shadow-lg);
-      z-index: 2000;
-      transform: translateY(-100px);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(10px);
-    }
-
-    .notification.show {
-      transform: translateY(0);
-    }
-
-    .notification.success {
-      border-left: 4px solid var(--success);
-    }
-
-    .notification.error {
-      border-left: 4px solid var(--danger);
-    }
-
-    .notification.warning {
-      border-left: 4px solid var(--warning);
-    }
-
-    .notification.info {
-      border-left: 4px solid var(--primary);
-    }
-
-    /* Notification Preferences */
-    .notification-options {
-      background: var(--bg-tertiary);
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 16px;
-    }
-
-    .notification-option {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .notification-option:last-child {
-      border-bottom: none;
-    }
-
-    .notification-option label {
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 0;
-    }
-
-    /* Animations */
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    /* Hidden elements for mobile */
-    .desktop-only {
-      display: none;
-    }
-
-    /* Responsive */
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .logo-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .logo-text h1 { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-text .subtitle { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .theme-toggle { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-light); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s ease; display: none; align-items: center; gap: 6px; }
+    .theme-toggle:hover { background: var(--bg-primary); transform: translateY(-1px); }
+    .menu-toggle { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm); }
+    .menu-toggle:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .mobile-menu { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .mobile-menu.active { display: block; opacity: 1; }
+    .mobile-menu-content { position: absolute; top: 0; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border-light); box-shadow: var(--shadow-lg); padding: 20px; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); max-height: 90vh; overflow-y: auto; }
+    .mobile-menu.active .mobile-menu-content { transform: translateY(0); }
+    .mobile-menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-light); }
+    .mobile-menu-title { font-size: 18px; font-weight: 600; }
+    .close-menu { background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 4px; transition: all 0.2s ease; }
+    .close-menu:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 10px; padding: 12px; text-align: center; transition: all 0.2s ease; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-number { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 2px; line-height: 1; }
+    .stat-label { font-size: 9px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); transition: all 0.2s ease; }
+    .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; position: relative; }
+    .card-icon { font-size: 20px; }
+    .card-title { font-size: 16px; font-weight: 600; }
+    .card-description { color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 500; font-size: 14px; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit; transition: all 0.2s ease; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); background: var(--bg-secondary); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all 0.2s ease; text-decoration: none; min-height: 44px; box-shadow: var(--shadow-sm); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2563eb; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-secondary:hover:not(:disabled) { background: #059669; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-light); }
+    .btn-outline:hover:not(:disabled) { background: var(--bg-tertiary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .desktop-actions { display: none; gap: 12px; margin-top: 16px; }
+    .mobile-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .mobile-actions .btn { flex: 1; }
+    .menu-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+    .menu-actions .btn { width: 100%; justify-content: flex-start; }
+    .switch-container { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 12px; }
+    .switch-info { flex: 1; }
+    .switch-title { font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+    .switch-description { font-size: 12px; color: var(--text-secondary); }
+    .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: 0.3s; border-radius: 12px; }
+    .switch-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    input:checked + .switch-slider { background: var(--primary); }
+    input:checked + .switch-slider:before { transform: translateX(20px); }
+    .calendar-container { margin-top: 16px; }
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 0 4px; }
+    .calendar-nav-btn { background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; font-size: 16px; font-weight: 600; }
+    .calendar-nav-btn:hover { background: var(--bg-tertiary); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .calendar-title { font-size: 18px; font-weight: 600; color: var(--primary); text-align: center; flex: 1; margin: 0 12px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: var(--bg-secondary); border-radius: 12px; padding: 20px; border: 1px solid var(--border-light); min-height: 420px; }
+    .calendar-day-name { font-weight: 600; font-size: 12px; text-align: center; padding: 12px 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .calendar-date { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; font-weight: 500; min-height: 55px; font-size: 14px; margin: 2px; }
+    .calendar-date:hover { background: var(--bg-tertiary); transform: scale(1.02); box-shadow: var(--shadow-sm); }
+    .calendar-date.other-month { opacity: 0.3; pointer-events: none; }
+    .calendar-date.today { border-color: var(--current-red); font-weight: 700; }
+    .calendar-date.today .date-number { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--current-red); color: white; border-radius: 50%; }
+    .calendar-date.regular { background: rgba(34, 197, 94, 0.1); border-color: var(--success); }
+    .calendar-date.overtime { background: rgba(249, 115, 22, 0.1); border-color: var(--overtime-color); }
+    .calendar-date.holiday { background: rgba(139, 92, 246, 0.1); border-color: var(--holiday-color); }
+    .calendar-date.training { background: rgba(6, 182, 212, 0.1); border-color: var(--training-color); }
+    .calendar-date.meeting { background: rgba(236, 72, 153, 0.1); border-color: var(--meeting-color); }
+    .calendar-date.emergency { background: rgba(220, 38, 38, 0.1); border-color: var(--emergency-color); }
+    .calendar-date.duty.today { background: rgba(34, 197, 94, 0.2); border-color: var(--success); }
+    .calendar-date.duty.today .date-number { background: var(--success); color: var(--current-red); font-weight: 700; }
+    .date-number { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+    .duty-time { font-size: 10px; font-weight: 400; margin-top: 3px; opacity: 0.9; padding: 2px 4px; border-radius: 3px; line-height: 1; }
+    .regular .duty-time { background: rgba(34, 197, 94, 0.2); }
+    .overtime .duty-time { background: rgba(249, 115, 22, 0.2); }
+    .holiday .duty-time { background: rgba(139, 92, 246, 0.2); }
+    .training .duty-time { background: rgba(6, 182, 212, 0.2); }
+    .meeting .duty-time { background: rgba(236, 72, 153, 0.2); }
+    .emergency .duty-time { background: rgba(220, 38, 38, 0.2); }
+    .notes-container { display: none; }
+    .note-item { padding: 10px; border-radius: 8px; background: var(--bg-tertiary); margin-bottom: 8px; border-left: 3px solid var(--primary); }
+    .note-date { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .note-content { font-size: 14px; }
+    .notes-popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .notes-popup-overlay.active { display: block; opacity: 1; }
+    .notes-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-secondary); border-radius: 16px; padding: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .notes-popup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-light); }
+    .notes-popup-title { font-size: 20px; font-weight: 600; }
+    .close-notes-popup { background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 4px; transition: all 0.2s ease; }
+    .close-notes-popup:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .notes-popup-content { margin-bottom: 20px; }
+    .notes-popup-actions { display: flex; gap: 12px; justify-content: flex-end; }
+    .duty-popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .duty-popup-overlay.active { display: block; opacity: 1; }
+    .duty-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 28px; padding: 28px; width: 92%; max-width: 560px; max-height: calc(100vh - 160px); overflow: visible; overflow-x: hidden; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); animation: fadeInPopup 0.3s ease-out; }
+    body:not(.dark) .duty-popup { background: var(--bg-secondary); border: 1px solid var(--border-light); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: var(--shadow-md); }
+    body:not(.dark) .duty-popup-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(0,0,0,0.3); }
+    @keyframes fadeInPopup { from { opacity: 0; transform: translate(-50%, -40%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+    .duty-popup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(59,130,246,0.1); flex-shrink: 0; }
+    .duty-popup-title { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .close-duty-popup { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); font-size: 22px; color: var(--text-primary); cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 14px; transition: all 0.2s ease; }
+    .close-duty-popup:hover { background: rgba(59,130,246,0.2); transform: translateY(-1px); box-shadow: 0 8px 16px rgba(59,130,246,0.2); }
+    .duty-popup-content { display: grid; gap: 16px; padding: 0; flex: 1 1 auto; max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: hidden; }
+    .duty-popup-content::-webkit-scrollbar { width: 8px; }
+    .duty-popup-content::-webkit-scrollbar-track { background: rgba(59,130,246,0.05); border-radius: 10px; }
+    .duty-popup-content::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(59,130,246,0.4), rgba(59,130,246,0.2)); border-radius: 10px; }
+    .duty-popup .form-group { display: grid; gap: 10px; padding: 14px 16px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.12); border-radius: 16px; transition: all 0.2s ease; }
+    .duty-popup .form-group:hover { background: rgba(59,130,246,0.08); }
+    .duty-popup .form-group label { font-weight: 600; color: var(--glass-text-light-alt); font-size: 14px; }
+    .dark .duty-popup .form-group label { color: var(--glass-text-dark-alt); }
+    .duty-popup .form-group input, .duty-popup .form-group select, .duty-popup .form-group textarea { border: 1px solid rgba(59,130,246,0.12); background: rgba(0,0,0,0.06); padding: 12px 14px; border-radius: 12px; color: var(--glass-text-light); font-size: 14px; transition: all 0.2s ease; }
+    .dark .duty-popup .form-group { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.06); }
+    .dark .duty-popup .form-group input, .dark .duty-popup .form-group select, .dark .duty-popup .form-group textarea { background: white; border: 1px solid rgba(255,255,255,0.06); color: black; }
+    .duty-popup .form-group input:focus, .duty-popup .form-group select:focus, .duty-popup .form-group textarea:focus { outline: none; border-color: rgba(59,130,246,0.5); background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .duty-popup .form-group textarea { min-height: 75px; resize: vertical; }
+    .duty-popup-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); width: calc(100% - 56px); max-width: 520px; z-index: 3000; pointer-events: auto; background: var(--bg-secondary); padding: 12px 16px; border-radius: 16px; box-shadow: var(--shadow-lg); }
+    .duty-popup-actions .btn { flex: 1 1 auto; min-width: 110px; padding: 12px 18px; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; }
+    .duty-popup-actions .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); }
+    .popup-note-input-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 8px; }
+    .popup-note-input-group textarea { flex: 1; min-width: 180px; padding: 12px; border: 1px solid var(--border-light); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary); resize: vertical; }
+    .popup-notes-list { display: grid; gap: 10px; margin-top: 14px; }
+    .popup-note-item { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); }
+    .popup-note-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .popup-note-actions .btn { padding: 6px 10px; font-size: 13px; }
+    .popup-note-item-content { color: var(--text-primary); white-space: pre-wrap; }
+    .popup-note-item-date { font-size: 12px; color: var(--text-secondary); }
+    .todo-section { border: 1px solid var(--border-light); border-radius: 14px; padding: 16px; background: var(--bg-tertiary); margin-top: 16px; margin-bottom: 190px; }
+    .todo-input-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .todo-input-group input { flex: 1; min-width: 180px; padding: 12px; border: 1px solid var(--border-light); border-radius: 12px; background: var(--bg-secondary); color: var(--text-primary); }
+    .todo-list { display: flex; flex-direction: column; gap: 10px; }
+    .todo-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); }
+    .todo-item-complete { text-decoration: line-through; color: var(--text-secondary); }
+    .todo-task { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .todo-task label { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+    .todo-task input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+    .todo-item button { flex-shrink: 0; font-size: 14px; padding: 8px 12px; }
+    @media (max-width: 640px) {
+      .duty-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 96%; max-width: 96%; border-radius: 20px; padding: 18px; max-height: 92vh; }
+      .duty-popup-content { gap: 16px; padding: 14px; }
+      .duty-popup-actions { justify-content: space-between; }
+      .duty-popup-actions .btn { flex: 1 1 48%; min-width: 120px; }
+      .duty-popup-actions .btn:nth-child(3) { flex: 1 1 100%; }
+      .todo-input-group, .popup-note-input-group { flex-direction: column; }
+      .todo-input-group button, .popup-note-input-group button { width: 100%; }
+    }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.active { display: block; opacity: 1; }
+    .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-secondary); border-radius: 16px; padding: 24px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-light); }
+    .modal-title { font-size: 20px; font-weight: 600; }
+    .close-modal { background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 4px; transition: all 0.2s ease; }
+    .close-modal:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .chart-container { margin: 20px 0; height: 300px; }
+    .notification { position: fixed; top: 10px; left: 10px; right: 10px; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px; box-shadow: var(--shadow-lg); z-index: 2000; transform: translateY(-100px); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); }
+    .notification.show { transform: translateY(0); }
+    .notification.success { border-left: 4px solid var(--success); }
+    .notification.error { border-left: 4px solid var(--danger); }
+    .notification.warning { border-left: 4px solid var(--warning); }
+    .notification.info { border-left: 4px solid var(--primary); }
+    .notification-options { background: var(--bg-tertiary); border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .notification-option { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+    .notification-option:last-child { border-bottom: none; }
+    .notification-option label { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeInUp 0.6s ease-out; }
+    .desktop-only { display: none; }
     @media (max-width: 480px) {
-      body {
-        padding: 6px;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      
-      .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 6px;
-      }
-      
-      .stat-card {
-        padding: 8px;
-      }
-      
-      .stat-number {
-        font-size: 14px;
-      }
-      
-      .stat-label {
-        font-size: 8px;
-      }
-      
-      .calendar-date {
-        min-height: 50px;
-        font-size: 13px;
-        margin: 1px;
-      }
-      
-      .calendar-grid {
-        gap: 4px;
-        padding: 16px;
-        min-height: 380px;
-      }
-      
-      .duty-time {
-        font-size: 8px;
-        padding: 1px 2px;
-      }
-
-      .card {
-        padding: 16px;
-        margin-bottom: 12px;
-      }
-
-      .logo-text h1 {
-        font-size: 18px;
-      }
-
-      .logo-text .subtitle {
-        font-size: 11px;
-      }
-
-      .date-number {
-        width: 26px;
-        height: 26px;
-      }
-
-      .calendar-date.today .date-number {
-        width: 26px;
-        height: 26px;
-      }
-
-      .modal {
-        width: 95%;
-        padding: 16px;
-      }
-
-      .notes-popup {
-        width: 95%;
-        padding: 16px;
-      }
-
-      .duty-popup {
-        width: 95%;
-        padding: 16px;
-      }
+      body { padding: 6px; }
+      .form-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; gap: 6px; }
+      .stat-card { padding: 8px; }
+      .stat-number { font-size: 14px; }
+      .stat-label { font-size: 8px; }
+      .calendar-date { min-height: 50px; font-size: 13px; margin: 1px; }
+      .calendar-grid { gap: 4px; padding: 16px; min-height: 380px; }
+      .duty-time { font-size: 8px; padding: 1px 2px; }
+      .card { padding: 16px; margin-bottom: 12px; }
+      .logo-text h1 { font-size: 18px; }
+      .logo-text .subtitle { font-size: 11px; }
+      .date-number { width: 26px; height: 26px; }
+      .calendar-date.today .date-number { width: 26px; height: 26px; }
+      .modal { width: 95%; padding: 16px; }
+      .notes-popup { width: 95%; padding: 16px; }
+      .duty-popup { width: 95%; padding: 16px; }
     }
-
     @media (min-width: 769px) {
-      .container {
-        max-width: 900px;
-        padding: 0 20px;
-      }
-      
-      .desktop-only {
-        display: block;
-      }
-      
-      .mobile-actions {
-        display: none;
-      }
-      
-      .desktop-actions {
-        display: flex;
-      }
-      
-      .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
-      .theme-toggle {
-        display: flex;
-      }
-
-      .calendar-grid {
-        gap: 8px;
-        padding: 24px;
-        min-height: 480px;
-      }
-
-      .calendar-date {
-        min-height: 65px;
-        font-size: 15px;
-        margin: 3px;
-      }
-
-      .date-number {
-        width: 34px;
-        height: 34px;
-      }
-
-      .calendar-date.today .date-number {
-        width: 34px;
-        height: 34px;
-      }
-
-      .stat-number {
-        font-size: 20px;
-      }
-
-      .stat-label {
-        font-size: 10px;
-      }
+      .container { max-width: 900px; padding: 0 20px; }
+      .desktop-only { display: block; }
+      .mobile-actions { display: none; }
+      .desktop-actions { display: flex; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+      .theme-toggle { display: flex; }
+      .calendar-grid { gap: 8px; padding: 24px; min-height: 480px; }
+      .calendar-date { min-height: 65px; font-size: 15px; margin: 3px; }
+      .date-number { width: 34px; height: 34px; }
+      .calendar-date.today .date-number { width: 34px; height: 34px; }
+      .stat-number { font-size: 20px; }
+      .stat-label { font-size: 10px; }
     }
   </style>
 </head>
-
-
-<script>(function(s){s.dataset.zone='10458010',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  
-<script>(function(s){s.dataset.zone='10011142',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  
 <body>
   <div class="container">
-    <!-- Header -->
     <header class="header fade-in">
       <div class="logo">
         <div class="logo-icon">
@@ -1230,28 +304,24 @@
           <div class="subtitle">Professional Scheduling</div>
         </div>
       </div>
-      
       <div class="header-actions">
         <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
           <span id="themeIcon">🌙</span>
           <span id="themeText">Dark</span>
         </button>
-        
         <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
           <span id="menuIcon">⚙️</span>
         </button>
       </div>
     </header>
 
-    <!-- Mobile Menu -->
+    <!-- Mobile Menu (keep your existing mobile menu HTML) -->
     <div class="mobile-menu" id="mobileMenu" onclick="closeMobileMenuOnBackdrop(event)">
       <div class="mobile-menu-content">
         <div class="mobile-menu-header">
           <div class="mobile-menu-title">Quick Actions & Settings</div>
           <button class="close-menu" onclick="toggleMobileMenu()" aria-label="Close menu">×</button>
         </div>
-        
-        <!-- Quick Add Duty in Mobile Menu -->
         <div class="card">
           <div class="card-header">
             <div class="card-icon">📋</div>
@@ -1260,12 +330,10 @@
               <div class="card-description">Add duty for selected date</div>
             </div>
           </div>
-          
           <div class="form-group">
             <label for="mobileDutyDate">📅 Select Date</label>
             <input type="date" id="mobileDutyDate" required>
           </div>
-          
           <div class="form-row">
             <div class="form-group">
               <label for="mobileStartTime">🕐 Start</label>
@@ -1276,7 +344,6 @@
               <input type="time" id="mobileEndTime" value="17:00" required>
             </div>
           </div>
-
           <div class="form-group">
             <label for="mobileDutyType">🏷️ Type</label>
             <select id="mobileDutyType">
@@ -1288,23 +355,15 @@
               <option value="emergency">Emergency</option>
             </select>
           </div>
-
           <div class="form-group">
             <label for="mobileDutyNotes">📝 Notes</label>
             <textarea id="mobileDutyNotes" rows="2" placeholder="Optional notes..."></textarea>
           </div>
-          
           <div class="mobile-actions">
-            <button class="btn btn-primary" onclick="addDutyMobile()" id="mobileAddBtn">
-              <span>➕</span> Add Duty
-            </button>
-            <button class="btn btn-danger" onclick="removeDutyMobile()" id="mobileRemoveBtn">
-              <span>🗑️</span> Remove
-            </button>
+            <button class="btn btn-primary" onclick="addDutyMobile()" id="mobileAddBtn"><span>➕</span> Add Duty</button>
+            <button class="btn btn-danger" onclick="removeDutyMobile()" id="mobileRemoveBtn"><span>🗑️</span> Remove</button>
           </div>
         </div>
-
-        <!-- Smart Notifications in Mobile Menu -->
         <div class="card">
           <div class="card-header">
             <div class="card-icon">🔔</div>
@@ -1313,7 +372,6 @@
               <div class="card-description">Manage notification preferences</div>
             </div>
           </div>
-          
           <div class="switch-container">
             <div class="switch-info">
               <div class="switch-title">Enable Notifications</div>
@@ -1324,40 +382,41 @@
               <span class="switch-slider"></span>
             </label>
           </div>
-
           <div class="notification-options" id="mobileNotificationOptions">
             <div class="notification-option">
-              <label>
-                <span>⏰</span>
-                24 Hours Before
-              </label>
+              <label><span>⏰</span>24 Hours Before</label>
               <label class="switch">
                 <input type="checkbox" id="mobile24HourToggle" onchange="toggleNotificationOption('24hour')">
                 <span class="switch-slider"></span>
               </label>
             </div>
             <div class="notification-option">
-              <label>
-                <span>⏰</span>
-                1 Hour Before
-              </label>
+              <label><span>⏰</span>1 Hour Before</label>
               <label class="switch">
                 <input type="checkbox" id="mobile1HourToggle" onchange="toggleNotificationOption('1hour')">
                 <span class="switch-slider"></span>
               </label>
             </div>
             <div class="notification-option">
-              <label>
-                <span>⏰</span>
-                30 Minutes Before
-              </label>
+              <label><span>⏰</span>30 Minutes Before</label>
               <label class="switch">
                 <input type="checkbox" id="mobile30MinToggle" onchange="toggleNotificationOption('30min')">
                 <span class="switch-slider"></span>
               </label>
             </div>
+            <div class="notification-option" style="flex-direction:column; align-items:flex-start; gap:8px; padding-top:8px;">
+              <label style="font-weight:600;">Manual notification title</label>
+              <input type="text" id="manualNotificationTitleMobile" placeholder="Reminder title" style="width:100%; min-width:0; padding:10px; border:1px solid var(--border-light); border-radius:8px; background: var(--bg-primary); color: var(--text-primary);" />
+            </div>
+            <div class="notification-option" style="flex-direction:column; align-items:flex-start; gap:8px; padding-top:8px;">
+              <label style="font-weight:600;">Manual notification date & time</label>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
+                <input type="date" id="manualNotificationDateMobile" style="width:auto; min-width:140px;" />
+                <input type="time" id="manualNotificationTimeMobile" style="width:auto; min-width:120px;" />
+                <button class="btn btn-primary" style="white-space:nowrap;" onclick="scheduleManualNotification('Mobile')">Set Reminder</button>
+              </div>
+            </div>
           </div>
-
           <div class="switch-container">
             <div class="switch-info">
               <div class="switch-title">Daily Summary</div>
@@ -1368,7 +427,6 @@
               <span class="switch-slider"></span>
             </label>
           </div>
-
           <div class="switch-container">
             <div class="switch-info">
               <div class="switch-title">Overtime Alerts</div>
@@ -1380,48 +438,23 @@
             </label>
           </div>
         </div>
-
-        <!-- Other Actions -->
         <div class="menu-actions">
-          <button class="btn btn-secondary" onclick="showAnalytics(); toggleMobileMenu();">
-            <span>📊</span> View Analytics
-          </button>
-          <button class="btn btn-outline" onclick="exportToPDF(); toggleMobileMenu();">
-            <span>📄</span> Export PDF
-          </button>
-          <button class="btn btn-outline" onclick="toggleTheme();">
-            <span id="mobileThemeIcon">🌙</span> <span id="mobileThemeText">Toggle Theme</span>
-          </button>
-          <button class="btn btn-outline" onclick="showNotesView(); toggleMobileMenu();">
-            <span>📝</span> View All Notes
-          </button>
-
+          <button class="btn btn-secondary" onclick="showAnalytics(); toggleMobileMenu();"><span>📊</span> View Analytics</button>
+          <button class="btn btn-outline" onclick="exportToPDF(); toggleMobileMenu();"><span>📄</span> Export PDF</button>
+          <button class="btn btn-outline" onclick="toggleTheme();"><span id="mobileThemeIcon">🌙</span> <span id="mobileThemeText">Toggle Theme</span></button>
+          <button class="btn btn-outline" onclick="showNotesView(); toggleMobileMenu();"><span>📝</span> View All Notes</button>
         </div>
       </div>
     </div>
 
     <main>
-      <!-- Stats Grid - Smaller -->
       <div class="stats-grid fade-in">
-        <div class="stat-card">
-          <div class="stat-number" id="totalDuties">0</div>
-          <div class="stat-label">Total Duties</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="monthDuties">0</div>
-          <div class="stat-label">This Month</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="nextDuty">--</div>
-          <div class="stat-label">Next Duty</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="avgHours">0</div>
-          <div class="stat-label">Avg Hours</div>
-        </div>
+        <div class="stat-card"><div class="stat-number" id="totalDuties">0</div><div class="stat-label">Total Duties</div></div>
+        <div class="stat-card"><div class="stat-number" id="monthDuties">0</div><div class="stat-label">This Month</div></div>
+        <div class="stat-card"><div class="stat-number" id="nextDuty">--</div><div class="stat-label">Next Duty</div></div>
+        <div class="stat-card"><div class="stat-number" id="avgHours">0</div><div class="stat-label">Avg Hours</div></div>
       </div>
 
-      <!-- Desktop Duty Management (Hidden on Mobile) -->
       <div class="card fade-in desktop-only">
         <div class="card-header">
           <div class="card-icon">📋</div>
@@ -1430,12 +463,10 @@
             <div class="card-description">Schedule and manage your duty assignments</div>
           </div>
         </div>
-        
         <div class="form-group">
           <label for="dutyDate">📅 Select Date</label>
           <input type="date" id="dutyDate" required>
         </div>
-        
         <div class="form-row">
           <div class="form-group">
             <label for="startTime">🕐 Start Time</label>
@@ -1446,7 +477,6 @@
             <input type="time" id="endTime" value="17:00" required>
           </div>
         </div>
-
         <div class="form-group">
           <label for="dutyType">🏷️ Duty Type</label>
           <select id="dutyType">
@@ -1458,26 +488,17 @@
             <option value="emergency">Emergency</option>
           </select>
         </div>
-
         <div class="form-group">
           <label for="dutyNotes">📝 Notes (Optional)</label>
           <textarea id="dutyNotes" rows="2" placeholder="Add any additional notes..."></textarea>
         </div>
-        
         <div class="desktop-actions">
-          <button class="btn btn-primary" onclick="addDuty()" id="addBtn">
-            <span>➕</span> Add Duty
-          </button>
-          <button class="btn btn-danger" onclick="removeDuty()" id="removeBtn">
-            <span>🗑️</span> Remove
-          </button>
-          <button class="btn btn-outline" onclick="showNotesView()">
-            <span>📝</span> View Notes
-          </button>
+          <button class="btn btn-primary" onclick="addDuty()" id="addBtn"><span>➕</span> Add Duty</button>
+          <button class="btn btn-danger" onclick="removeDuty()" id="removeBtn"><span>🗑️</span> Remove</button>
+          <button class="btn btn-outline" onclick="showNotesView()"><span>📝</span> View Notes</button>
         </div>
       </div>
 
-      <!-- Desktop Smart Notifications (Hidden on Mobile) -->
       <div class="card fade-in desktop-only">
         <div class="card-header">
           <div class="card-icon">🔔</div>
@@ -1486,7 +507,6 @@
             <div class="card-description">Get intelligent reminders for your duties</div>
           </div>
         </div>
-        
         <div class="switch-container">
           <div class="switch-info">
             <div class="switch-title">Enable Notifications</div>
@@ -1497,40 +517,41 @@
             <span class="switch-slider"></span>
           </label>
         </div>
-
         <div class="notification-options" id="desktopNotificationOptions">
           <div class="notification-option">
-            <label>
-              <span>⏰</span>
-              24 Hours Before
-            </label>
+            <label><span>⏰</span>24 Hours Before</label>
             <label class="switch">
               <input type="checkbox" id="24HourToggle" onchange="toggleNotificationOption('24hour')">
               <span class="switch-slider"></span>
             </label>
           </div>
           <div class="notification-option">
-            <label>
-              <span>⏰</span>
-              1 Hour Before
-            </label>
+            <label><span>⏰</span>1 Hour Before</label>
             <label class="switch">
               <input type="checkbox" id="1HourToggle" onchange="toggleNotificationOption('1hour')">
               <span class="switch-slider"></span>
             </label>
           </div>
           <div class="notification-option">
-            <label>
-              <span>⏰</span>
-              30 Minutes Before
-            </label>
+            <label><span>⏰</span>30 Minutes Before</label>
             <label class="switch">
               <input type="checkbox" id="30MinToggle" onchange="toggleNotificationOption('30min')">
               <span class="switch-slider"></span>
             </label>
           </div>
+          <div class="notification-option" style="flex-direction:column; align-items:flex-start; gap:8px; padding-top:8px;">
+            <label style="font-weight:600;">Manual notification title</label>
+            <input type="text" id="manualNotificationTitleDesktop" placeholder="Reminder title" style="width:100%; min-width:0; padding:10px; border:1px solid var(--border-light); border-radius:8px; background: var(--bg-primary); color: var(--text-primary);" />
+          </div>
+          <div class="notification-option" style="flex-direction:column; align-items:flex-start; gap:8px; padding-top:8px;">
+            <label style="font-weight:600;">Manual notification date & time</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
+              <input type="date" id="manualNotificationDateDesktop" style="width:auto; min-width:140px;" />
+              <input type="time" id="manualNotificationTimeDesktop" style="width:auto; min-width:120px;" />
+              <button class="btn btn-primary" style="white-space:nowrap;" onclick="scheduleManualNotification('Desktop')">Set Reminder</button>
+            </div>
+          </div>
         </div>
-
         <div class="switch-container">
           <div class="switch-info">
             <div class="switch-title">Daily Summary</div>
@@ -1541,7 +562,6 @@
             <span class="switch-slider"></span>
           </label>
         </div>
-
         <div class="switch-container">
           <div class="switch-info">
             <div class="switch-title">Overtime Alerts</div>
@@ -1552,15 +572,12 @@
             <span class="switch-slider"></span>
           </label>
         </div>
-
         <div class="desktop-actions">
-          <button class="btn btn-outline" onclick="testNotification()">
-            <span>🔔</span> Test Notification
-          </button>
+          <button class="btn btn-outline" onclick="testNotification()"><span>🔔</span> Test Notification</button>
+          <button class="btn btn-outline" onclick="window.checkOneSignalStatus()"><span>📡</span> Check OneSignal</button>
         </div>
       </div>
 
-      <!-- Calendar (Always Visible) - Increased height with better spacing -->
       <div class="card fade-in">
         <div class="card-header">
           <div class="card-icon">📆</div>
@@ -1569,40 +586,32 @@
             <div class="card-description">Visual overview of all your scheduled duties</div>
           </div>
         </div>
-
         <div class="calendar-container">
           <div class="calendar-header">
             <button class="calendar-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month">‹</button>
             <div class="calendar-title" id="calendarTitle">December 2024</div>
             <button class="calendar-nav-btn" onclick="changeMonth(1)" aria-label="Next month">›</button>
           </div>
-
           <div class="calendar-grid" id="calendarGrid"></div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- Notes Popup -->
+  <!-- Popups (keep your existing popup HTML) -->
   <div class="notes-popup-overlay" id="notesPopup" onclick="closeNotesPopupOnBackdrop(event)">
     <div class="notes-popup">
       <div class="notes-popup-header">
         <div class="notes-popup-title" id="notesPopupTitle">Notes for <span id="notesPopupDate"></span></div>
         <button class="close-notes-popup" onclick="hideNotesPopup()" aria-label="Close notes popup">×</button>
       </div>
-
       <div class="notes-popup-content">
-        <div id="existingNotesContainer">
-          <h4 style="margin-bottom: 12px;">Existing Notes</div>
-          <div id="existingNotesList"></div>
-        </div>
-        
+        <div id="existingNotesContainer"><h4 style="margin-bottom: 12px;">Existing Notes</h4><div id="existingNotesList"></div></div>
         <div class="form-group" style="margin-top: 20px;">
           <label for="notesPopupContent">Add New Note</label>
           <textarea id="notesPopupContent" rows="4" placeholder="Write your note here..."></textarea>
         </div>
       </div>
-
       <div class="notes-popup-actions">
         <button class="btn btn-primary" onclick="saveNoteFromPopup()">Save Note</button>
         <button class="btn btn-outline" onclick="hideNotesPopup()">Close</button>
@@ -1610,19 +619,14 @@
     </div>
   </div>
 
-  <!-- All Notes View Popup -->
   <div class="notes-popup-overlay" id="allNotesPopup" onclick="closeAllNotesPopupOnBackdrop(event)">
     <div class="notes-popup">
       <div class="notes-popup-header">
         <div class="notes-popup-title">All Notes</div>
         <button class="close-notes-popup" onclick="hideAllNotesPopup()" aria-label="Close all notes popup">×</button>
       </div>
-
       <div class="notes-popup-content">
-        <div id="allNotesList" style="max-height: 300px; overflow-y: auto;">
-          <!-- All notes will be populated here -->
-        </div>
-        
+        <div id="allNotesList" style="max-height: 300px; overflow-y: auto;"></div>
         <div class="form-group" style="margin-top: 20px;">
           <label for="newNoteDate">📅 Date</label>
           <input type="date" id="newNoteDate" required>
@@ -1632,7 +636,6 @@
           <textarea id="newNoteContent" rows="4" placeholder="Write your note here..."></textarea>
         </div>
       </div>
-
       <div class="notes-popup-actions">
         <button class="btn btn-primary" onclick="addNewNote()">Add Note</button>
         <button class="btn btn-outline" onclick="hideAllNotesPopup()">Close</button>
@@ -1640,1012 +643,797 @@
     </div>
   </div>
 
-  <!-- Duty Management Popup -->
   <div class="duty-popup-overlay" id="dutyPopup" onclick="closeDutyPopupOnBackdrop(event)">
     <div class="duty-popup">
       <div class="duty-popup-header">
         <div class="duty-popup-title">Duty for <span id="dutyPopupDate"></span></div>
         <button class="close-duty-popup" onclick="hideDutyPopup()" aria-label="Close duty popup">×</button>
       </div>
-
       <div class="duty-popup-content">
-        <div id="existingDutyContainer">
-          <h4 style="margin-bottom: 12px;">Existing Duty</div>
-          <div id="existingDutyInfo"></div>
-        </div>
-        
-        <div class="form-group" style="margin-top: 20px;">
-          <label for="popupStartTime">🕐 Start Time</label>
-          <input type="time" id="popupStartTime" value="08:00" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="popupEndTime">🕔 End Time</label>
-          <input type="time" id="popupEndTime" value="17:00" required>
-        </div>
-
+        <div id="existingDutyContainer"><h4 style="margin-bottom: 12px;">Existing Duty</h4><div id="existingDutyInfo"></div></div>
+        <div class="form-group"><label for="popupStartTime">🕐 Start Time</label><input type="time" id="popupStartTime" value="08:00" required></div>
+        <div class="form-group"><label for="popupEndTime">🕔 End Time</label><input type="time" id="popupEndTime" value="17:00" required></div>
         <div class="form-group">
           <label for="popupDutyType">🏷️ Duty Type</label>
-          <select id="popupDutyType">
-            <option value="regular">Regular Duty</option>
-            <option value="overtime">Overtime</option>
-            <option value="holiday">Holiday</option>
-            <option value="training">Training</option>
-            <option value="meeting">Meeting</option>
-            <option value="emergency">Emergency</option>
-          </select>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="popupDutyType">
+              <option value="regular">Regular Duty</option><option value="overtime">Overtime</option>
+              <option value="holiday">Holiday</option><option value="training">Training</option>
+              <option value="meeting">Meeting</option><option value="emergency">Emergency</option>
+              <option value="custom">Custom...</option>
+            </select>
+            <input id="popupDutyTypeCustom" type="text" placeholder="Type custom duty" style="display:none; flex:1; min-width:140px;" />
+          </div>
         </div>
-
         <div class="form-group">
-          <label for="popupDutyNotes">📝 Notes (Optional)</label>
-          <textarea id="popupDutyNotes" rows="2" placeholder="Add any additional notes..."></textarea>
+          <label for="popupNoteInput">📝 Notes for this date</label>
+          <div class="popup-note-input-group">
+            <textarea id="popupNoteInput" rows="2" placeholder="Add a note for this date..."></textarea>
+            <button type="button" class="btn btn-primary" id="popupNoteAddBtn" onclick="addOrUpdatePopupNote()">Add</button>
+          </div>
         </div>
-        
-        <div class="form-group">
-          <button class="btn btn-outline" style="width: 100%;" onclick="showNotesPopup(selectedDate)">
-            <span>📝</span> Manage Notes for This Date
-          </button>
+        <div class="popup-notes-list" id="popupNotesList"></div>
+        <div class="todo-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+            <div><div style="font-size: 16px; font-weight: 600;">Date Tasks</div><div style="font-size: 13px; color: var(--text-secondary);">Create checklist items for this duty date</div></div>
+            <span style="font-size: 20px;">✅</span>
+          </div>
+          <div class="todo-input-group">
+            <input type="text" id="todoInput" placeholder="Add a task for this date" />
+            <button type="button" class="btn btn-primary" onclick="addTodoItem()">Add</button>
+          </div>
+          <div id="todoList" class="todo-list"></div>
         </div>
       </div>
-
       <div class="duty-popup-actions">
-        <button class="btn btn-primary" onclick="saveDutyFromPopup()" id="popupSaveBtn">
-          <span>💾</span> Save Duty
-        </button>
-        <button class="btn btn-danger" onclick="deleteDutyFromPopup()" id="popupDeleteBtn" style="display: none;">
-          <span>🗑️</span> Delete Duty
-        </button>
-        <button class="btn btn-outline" onclick="hideDutyPopup()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveDutyFromPopup()" id="popupSaveBtn"><span>💾</span> Save Duty</button>
+        <button type="button" class="btn btn-danger" onclick="deleteDutyFromPopup()" id="popupDeleteBtn" style="display: none;"><span>🗑️</span> Delete Duty</button>
+        <button type="button" class="btn btn-outline" onclick="hideDutyPopup()">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Analytics Modal -->
   <div class="modal-overlay" id="analyticsModal" onclick="closeModalOnBackdrop(event)">
     <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">Duty Analytics</div>
-        <button class="close-modal" onclick="hideAnalytics()" aria-label="Close modal">×</button>
-      </div>
-
-      <div class="chart-container">
-        <canvas id="dutyTypeChart"></canvas>
-      </div>
-
-      <div class="chart-container">
-        <canvas id="monthlyHoursChart"></canvas>
-      </div>
-
+      <div class="modal-header"><div class="modal-title">Duty Analytics</div><button class="close-modal" onclick="hideAnalytics()">×</button></div>
+      <div class="chart-container"><canvas id="dutyTypeChart"></canvas></div>
+      <div class="chart-container"><canvas id="monthlyHoursChart"></canvas></div>
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-number" id="totalHours">0</div>
-          <div class="stat-label">Total Hours</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="overtimeHours">0</div>
-          <div class="stat-label">Overtime Hours</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="holidayCount">0</div>
-          <div class="stat-label">Holidays</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="avgDutyLength">0</div>
-          <div class="stat-label">Avg Duty Length</div>
-        </div>
+        <div class="stat-card"><div class="stat-number" id="totalHours">0</div><div class="stat-label">Total Hours</div></div>
+        <div class="stat-card"><div class="stat-number" id="overtimeHours">0</div><div class="stat-label">Overtime Hours</div></div>
+        <div class="stat-card"><div class="stat-number" id="holidayCount">0</div><div class="stat-label">Holidays</div></div>
+        <div class="stat-card"><div class="stat-number" id="avgDutyLength">0</div><div class="stat-label">Avg Duty Length</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Notification -->
   <div class="notification" id="notification">
     <div style="display: flex; justify-content: space-between; align-items: start;">
-      <div>
-        <h4 id="notificationTitle" style="font-weight: 600; margin-bottom: 4px;"></h4>
-        <p id="notificationMessage" style="font-size: 14px; color: var(--text-secondary);"></p>
-      </div>
+      <div><h4 id="notificationTitle" style="font-weight: 600; margin-bottom: 4px;"></h4><p id="notificationMessage" style="font-size: 14px; color: var(--text-secondary);"></p></div>
       <button onclick="hideNotification()" style="background: none; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer; margin-left: 16px;">×</button>
     </div>
   </div>
 
   <script>
+    // =====================================================
+    // COMPLETE DUTY CALENDAR APPLICATION
+    // =====================================================
+    
     // Global variables
     let duties = JSON.parse(localStorage.getItem('duties')) || [];
     let notes = JSON.parse(localStorage.getItem('dutyNotes')) || [];
     let currentMonth = new Date();
     let selectedDate = getCurrentDate();
     let notificationSettings = JSON.parse(localStorage.getItem('notificationSettings')) || {
-      enabled: false,
-      dailySummary: false,
-      overtime: false,
-      '24hour': true,
-      '1hour': true,
-      '30min': true
+      enabled: false, dailySummary: false, overtime: false, '24hour': true, '1hour': true, '30min': true
     };
+    let customNotifications = JSON.parse(localStorage.getItem('customNotifications')) || [];
+    let todoItems = JSON.parse(localStorage.getItem('todoItems')) || [];
     let notificationTimeouts = {};
+    let customNotificationTimeouts = {};
+    let editingPopupNoteId = null;
     let backgroundNotificationCheck = null;
+    let touchStartX = 0, touchEndX = 0;
+    let currentOneSignalId = null;
+
+    // IMPORTANT: Replace this with your Google Apps Script Web App URL
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxZumSGQ_PZL2AEZpkGT9W7D33-pkfyRNmARv7anQjWWnvH9vP3S6eNgQ0OfR75d0Pcfg/exec'
+
+    // Helper functions
+    function getCurrentDate() { return new Date().toISOString().split('T')[0]; }
+    function formatDate(dateStr) { return new Date(dateStr).toLocaleDateString(); }
+    function formatTime(timeStr) { return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+    function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+    // =====================================================
+    // ONESIGNAL SETUP
+    // =====================================================
     
-    // Touch swipe variables
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    // Utility functions
-    function getCurrentDate() {
-      return new Date().toISOString().split('T')[0];
-    }
-
-    function formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString();
-    }
-
-    function formatTime(timeStr) {
-      return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    // Local Storage functions
-    function saveDuties() {
-      localStorage.setItem('duties', JSON.stringify(duties));
-      updateStats();
-      scheduleAllNotifications();
-    }
-
-    function saveNotes() {
-      localStorage.setItem('dutyNotes', JSON.stringify(notes));
-    }
-
-    function saveNotificationSettings() {
-      localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
-      if (notificationSettings.enabled) {
-        scheduleAllNotifications();
-        startBackgroundNotificationCheck();
-      } else {
-        clearAllNotifications();
-        stopBackgroundNotificationCheck();
+    function storeOneSignalId(userId) {
+      if (userId && userId !== currentOneSignalId && userId !== "null" && userId !== "undefined") {
+        currentOneSignalId = userId;
+        localStorage.setItem('onesignal_user_id', userId);
+        console.log("✅ OneSignal User ID stored: " + userId);
+        registerUserWithBackend(userId);
       }
     }
-
-    // Enhanced notification system
-    function showNotification(title, message, type = 'info') {
+    
+    function getStoredOneSignalId() {
+      return localStorage.getItem('onesignal_user_id') || currentOneSignalId;
+    }
+    
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.init({
+          appId: "74ec48f7-2aba-4801-83dd-e3b373c160d1",
+          safari_web_id: "web.onesignal.auto.74ec48f7-2aba-4801-83dd-e3b373c160d1",
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: { enable: true, displayPredicate: () => true },
+          serviceWorkerPath: "/duty/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/duty/" }
+        });
+        
+        setTimeout(async () => {
+          try {
+            const userId = await OneSignal.User.PushSubscription.id;
+            if (userId) storeOneSignalId(userId);
+            else {
+              OneSignal.User.PushSubscription.addEventListener("change", (event) => {
+                if (event.current) storeOneSignalId(event.current);
+              });
+            }
+          } catch(e) { console.log("Error getting OneSignal ID:", e); }
+        }, 2000);
+        
+        setTimeout(async () => {
+          const permission = await OneSignal.Notifications.permission;
+          if (permission === "default") {
+            const result = await OneSignal.Notifications.requestPermission();
+            if (result) {
+              const userId = await OneSignal.User.PushSubscription.id;
+              if (userId) storeOneSignalId(userId);
+            }
+          }
+        }, 3000);
+      } catch(e) { console.log("OneSignal init error:", e); }
+    });
+    
+    async function getOneSignalId() {
+      let storedId = getStoredOneSignalId();
+      if (storedId && storedId !== "null" && storedId !== "undefined") return storedId;
+      if (window.OneSignal) {
+        try {
+          const userId = await OneSignal.User.PushSubscription.id;
+          if (userId) { storeOneSignalId(userId); return userId; }
+        } catch(e) { console.log("Error getting OneSignal ID:", e); }
+      }
+      return null;
+    }
+    
+    async function registerUserWithBackend(onesignalId) {
+      if (!onesignalId || onesignalId === "null" || onesignalId === "undefined") return false;
+      try {
+        const payload = new URLSearchParams({ action: 'register', onesignal_id: onesignalId });
+        await fetch(BACKEND_URL, {
+          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload
+        });
+        console.log("✅ User registered with backend:", onesignalId);
+        return true;
+      } catch(e) { console.log("Backend registration error:", e); return false; }
+    }
+    
+    // =====================================================
+    // NOTIFICATION FUNCTIONS - ALL GO THROUGH BACKEND
+    // =====================================================
+    
+    async function sendBackendNotification(title, message, dutyDate, startTime, dutyType) {
+      try {
+        const onesignalId = await getOneSignalId();
+        if (!onesignalId) { 
+          showNotification(title, message, 'info'); 
+          return false; 
+        }
+        
+        // Send to backend which will handle OneSignal API
+        const payload = new URLSearchParams({
+          action: 'send_notification',
+          onesignal_id: onesignalId,
+          title: title,
+          message: message,
+          duty_date: dutyDate || '',
+          duty_time: startTime || '',
+          duty_type: dutyType || ''
+        });
+        
+        await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
+        
+        console.log("Notification sent via backend:", title);
+        return true;
+      } catch(e) { 
+        console.log("Backend notification error:", e); 
+        showNotification(title, message, 'info'); 
+        return false; 
+      }
+    }
+    
+    async function scheduleManualNotification(section) {
+      const dateInput = document.getElementById(`manualNotificationDate${section}`);
+      const timeInput = document.getElementById(`manualNotificationTime${section}`);
+      if (!dateInput || !timeInput) return;
+      const date = dateInput.value, time = timeInput.value;
+      if (!date || !time) { showNotification('Error', 'Please select both a date and time', 'error'); return; }
+      const dateTimeString = `${date}T${time}:00`;
+      const scheduledTime = new Date(dateTimeString);
+      const titleInput = document.getElementById(`manualNotificationTitle${section}`);
+      const titleText = titleInput && titleInput.value.trim() ? titleInput.value.trim() : 'Manual Reminder';
+      const now = new Date();
+      if (isNaN(scheduledTime.getTime()) || scheduledTime <= now) { showNotification('Error', 'Please choose a future date and time', 'error'); return; }
+      
+      const onesignalId = await getOneSignalId();
+      
+      // Store in backend for scheduled processing
+      try {
+        const payload = new URLSearchParams({
+          action: 'store_scheduled_notification',
+          subscription_id: onesignalId || 'pending',
+          selected_date: date,
+          selected_time: time,
+          title: titleText,
+          timestamp: new Date().toISOString()
+        });
+        await fetch(BACKEND_URL, {
+          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload
+        });
+      } catch(e) { console.log("Storage error:", e); }
+      
+      showNotification('Manual Reminder Scheduled', `Will be sent at ${scheduledTime.toLocaleString()}`, 'success');
+    }
+    
+    window.checkOneSignalStatus = async function() {
+      if (window.OneSignal) {
+        try {
+          const isPushSupported = await window.OneSignal.Notifications.isPushSupported();
+          const permission = await window.OneSignal.Notifications.permission;
+          const userId = await getOneSignalId();
+          console.log("OneSignal Status:", { isPushSupported, permission, userId });
+          if (userId) showNotification("✅ Notifications Ready", "Push notifications are properly configured!", "success");
+          else if (permission === "default") showNotification("🔔 Enable Notifications", "Click allow to receive duty reminders.", "warning");
+          else if (permission === "denied") showNotification("⚠️ Notifications Blocked", "Please enable notifications in browser settings.", "error");
+        } catch(e) { console.log("Status check error:", e); }
+      }
+    };
+    
+    async function showNotification(title, message, type = 'info') {
       const notification = document.getElementById('notification');
       const titleEl = document.getElementById('notificationTitle');
       const messageEl = document.getElementById('notificationMessage');
-      
       titleEl.textContent = title;
       messageEl.textContent = message;
-      
       notification.className = `notification ${type} show`;
       
-      // For browser notifications (will work outside app when converted with WebView)
-      if (notificationSettings.enabled) {
-        showBrowserNotification(title, message);
+      if (notificationSettings.enabled && 'Notification' in window && Notification.permission === 'granted') {
+        try { new Notification(title, { body: message, icon: 'https://cdn-icons-png.flaticon.com/512/2838/2838912.png', tag: 'duty-reminder', renotify: true }); } 
+        catch(e) { console.log('Browser notification error:', e); }
       }
-      
-      setTimeout(() => {
-        hideNotification();
-      }, 5000);
+      setTimeout(() => { hideNotification(); }, 5000);
     }
-
-    function hideNotification() {
-      const notification = document.getElementById('notification');
-      notification.classList.remove('show');
-    }
-
-    // Browser Notification System (Works outside app in Kodular WebView)
-    function showBrowserNotification(title, message) {
-      // Check if running in WebView (for Kodular conversion)
-      if (window.isKodularWebView) {
-        // Use WebView interface for notifications
-        try {
-          if (window.Android && window.Android.showNotification) {
-            window.Android.showNotification(title, message);
-          }
-        } catch (e) {
-          console.log('Kodular WebView notification failed:', e);
-        }
-      } else if ('Notification' in window && Notification.permission === 'granted') {
-        // Standard browser notifications
-        const options = {
-          body: message,
-          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>',
-          badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>',
-          tag: 'duty-calendar',
-          requireInteraction: false,
-          silent: false
-        };
-        
-        // Show persistent notification for better visibility
-        const notification = new Notification(title, options);
-        
-        // Handle notification click
-        notification.onclick = function() {
-          window.focus();
-          this.close();
-        };
-        
-        // Auto close after 10 seconds
-        setTimeout(() => {
-          notification.close();
-        }, 10000);
-      }
-    }
-
-    // Request notification permission
+    
+    function hideNotification() { const notification = document.getElementById('notification'); notification.classList.remove('show'); }
+    
     async function requestNotificationPermission() {
-      if ('Notification' in window) {
-        try {
+      try {
+        if ('Notification' in window) {
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             showNotification('Notifications Enabled', 'You will now receive reminders for your duties', 'success');
+            if (window.OneSignal) {
+              const userId = await OneSignal.User.PushSubscription.id;
+              if (userId) await registerUserWithBackend(userId);
+            }
             return true;
           }
-        } catch (e) {
-          console.error('Notification permission error:', e);
         }
-      }
+      } catch(e) { console.error('Notification permission error:', e); }
       return false;
     }
-
-    // Schedule notifications for all duties
-    function scheduleAllNotifications() {
+    
+    // Core data functions
+    function saveDuties() { localStorage.setItem('duties', JSON.stringify(duties)); updateStats(); scheduleAllNotifications(); }
+    function saveNotes() { localStorage.setItem('dutyNotes', JSON.stringify(notes)); }
+    function saveTodoItems() { localStorage.setItem('todoItems', JSON.stringify(todoItems)); }
+    function saveNotificationSettings() {
+      localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+      if (notificationSettings.enabled) { scheduleAllNotifications(); startBackgroundNotificationCheck(); }
+      else { clearAllNotifications(); stopBackgroundNotificationCheck(); }
+    }
+    
+    async function scheduleAllNotifications() {
       if (!notificationSettings.enabled) return;
       
-      // Clear any existing notifications
-      clearAllNotifications();
+      const onesignalId = await getOneSignalId();
+      if (!onesignalId) {
+        console.log("Cannot schedule notifications: No OneSignal ID");
+        return;
+      }
       
       const now = new Date();
       
-      duties.forEach(duty => {
-        const dutyDate = new Date(duty.date);
+      for (const duty of duties) {
         const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
+        if (dutyDateTime <= now) continue;
         
-        // Only schedule notifications for future duties
-        if (dutyDateTime > now) {
-          // Schedule 24 hours before notification
-          if (notificationSettings['24hour']) {
-            const twentyFourHoursBefore = new Date(dutyDateTime);
-            twentyFourHoursBefore.setHours(twentyFourHoursBefore.getHours() - 24);
-            
-            if (twentyFourHoursBefore > now) {
-              const timeoutId = setTimeout(() => {
-                showNotification(
-                  'Upcoming Duty Tomorrow', 
-                  `You have a ${duty.type} duty scheduled for tomorrow at ${formatTime(duty.startTime)}`,
-                  'warning'
-                );
-              }, twentyFourHoursBefore - now);
-              
-              notificationTimeouts[`${duty.id}-24hour`] = timeoutId;
-            }
+        // Schedule reminders via backend
+        if (notificationSettings['24hour']) {
+          const twentyFourHoursBefore = new Date(dutyDateTime);
+          twentyFourHoursBefore.setHours(twentyFourHoursBefore.getHours() - 24);
+          if (twentyFourHoursBefore > now) {
+            await sendBackendNotification(
+              'Upcoming Duty Tomorrow',
+              `You have a ${duty.type} duty scheduled for tomorrow at ${formatTime(duty.startTime)}`,
+              duty.date, duty.startTime, duty.type
+            );
           }
-          
-          // Schedule 1 hour before notification
-          if (notificationSettings['1hour']) {
-            const oneHourBefore = new Date(dutyDateTime);
-            oneHourBefore.setHours(oneHourBefore.getHours() - 1);
-            
-            if (oneHourBefore > now) {
-              const timeoutId = setTimeout(() => {
-                showNotification(
-                  'Upcoming Duty in 1 Hour', 
-                  `Your ${duty.type} duty starts at ${formatTime(duty.startTime)}`,
-                  'warning'
-                );
-              }, oneHourBefore - now);
-              
-              notificationTimeouts[`${duty.id}-1hour`] = timeoutId;
-            }
+        }
+        
+        if (notificationSettings['1hour']) {
+          const oneHourBefore = new Date(dutyDateTime);
+          oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+          if (oneHourBefore > now) {
+            await sendBackendNotification(
+              'Upcoming Duty in 1 Hour',
+              `Your ${duty.type} duty starts at ${formatTime(duty.startTime)}`,
+              duty.date, duty.startTime, duty.type
+            );
           }
-          
-          // Schedule 30 minutes before notification
-          if (notificationSettings['30min']) {
-            const thirtyMinutesBefore = new Date(dutyDateTime);
-            thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
-            
-            if (thirtyMinutesBefore > now) {
-              const timeoutId = setTimeout(() => {
-                showNotification(
-                  'Upcoming Duty in 30 Minutes', 
-                  `Your ${duty.type} duty starts soon at ${formatTime(duty.startTime)}`,
-                  'warning'
-                );
-              }, thirtyMinutesBefore - now);
-              
-              notificationTimeouts[`${duty.id}-30min`] = timeoutId;
-            }
+        }
+        
+        if (notificationSettings['30min']) {
+          const thirtyMinutesBefore = new Date(dutyDateTime);
+          thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
+          if (thirtyMinutesBefore > now) {
+            await sendBackendNotification(
+              'Upcoming Duty in 30 Minutes',
+              `Your ${duty.type} duty starts soon at ${formatTime(duty.startTime)}`,
+              duty.date, duty.startTime, duty.type
+            );
+          }
+        }
+      }
+    }
+    
+    function clearAllNotifications() { Object.keys(notificationTimeouts).forEach(key => clearTimeout(notificationTimeouts[key])); notificationTimeouts = {}; }
+    function startBackgroundNotificationCheck() { if (backgroundNotificationCheck) return; backgroundNotificationCheck = setInterval(() => { checkImmediateNotifications(); }, 60000); }
+    function stopBackgroundNotificationCheck() { if (backgroundNotificationCheck) { clearInterval(backgroundNotificationCheck); backgroundNotificationCheck = null; } }
+    
+    function checkImmediateNotifications() {
+      if (!notificationSettings.enabled) return;
+      const now = new Date();
+      duties.forEach(duty => {
+        const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
+        const timeDiff = dutyDateTime - now;
+        if (timeDiff > 0 && timeDiff < 5 * 60 * 1000) {
+          const notificationKey = `${duty.id}-immediate`;
+          if (!localStorage.getItem(notificationKey)) {
+            sendBackendNotification('Duty Starting Soon', `Your ${duty.type} duty starts in ${Math.round(timeDiff / (60 * 1000))} minutes at ${formatTime(duty.startTime)}`, duty.date, duty.startTime, duty.type);
+            localStorage.setItem(notificationKey, 'true');
+            setTimeout(() => { localStorage.removeItem(notificationKey); }, timeDiff + 60000);
           }
         }
       });
     }
-
-    // Clear all scheduled notifications
-    function clearAllNotifications() {
-      Object.keys(notificationTimeouts).forEach(key => {
-        clearTimeout(notificationTimeouts[key]);
-      });
-      notificationTimeouts = {};
-    }
-
-    // Background notification checker (for when app is in background)
-    function startBackgroundNotificationCheck() {
-      if (backgroundNotificationCheck) return;
-      
-      backgroundNotificationCheck = setInterval(() => {
-        checkImmediateNotifications();
-      }, 60000); // Check every minute
-    }
-
-    function stopBackgroundNotificationCheck() {
-      if (backgroundNotificationCheck) {
-        clearInterval(backgroundNotificationCheck);
-        backgroundNotificationCheck = null;
-      }
-    }
-
-    // Mobile menu functions
-    function toggleMobileMenu() {
-      const menu = document.getElementById('mobileMenu');
-      menu.classList.toggle('active');
-      
-      // Update mobile form with selected date
-      document.getElementById('mobileDutyDate').value = selectedDate;
-    }
-
-    function closeMobileMenuOnBackdrop(event) {
-      if (event.target === event.currentTarget) {
-        toggleMobileMenu();
-      }
-    }
-
-    // Theme functions
+    
+    function clearDutyNotifications(dutyId) { ['24hour', '1hour', '30min'].forEach(period => { const key = `${dutyId}-${period}`; if (notificationTimeouts[key]) { clearTimeout(notificationTimeouts[key]); delete notificationTimeouts[key]; } }); }
+    
+    // UI Functions (keep your existing UI functions - toggleMobileMenu, toggleTheme, toggleNotification, etc.)
+    function toggleMobileMenu() { const menu = document.getElementById('mobileMenu'); menu.classList.toggle('active'); document.getElementById('mobileDutyDate').value = selectedDate; }
+    function closeMobileMenuOnBackdrop(event) { if (event.target === event.currentTarget) { toggleMobileMenu(); } }
+    
     function toggleTheme() {
       document.body.classList.toggle('dark');
       const isDark = document.body.classList.contains('dark');
-      
-      // Update theme icons
-      const themeIcon = document.getElementById('themeIcon');
-      const themeText = document.getElementById('themeText');
-      const mobileThemeIcon = document.getElementById('mobileThemeIcon');
-      const mobileThemeText = document.getElementById('mobileThemeText');
-      
-      if (isDark) {
-        themeIcon.textContent = '☀️';
-        themeText.textContent = 'Light';
-        mobileThemeIcon.textContent = '☀️';
-        mobileThemeText.textContent = 'Light Mode';
-      } else {
-        themeIcon.textContent = '🌙';
-        themeText.textContent = 'Dark';
-        mobileThemeIcon.textContent = '🌙';
-        mobileThemeText.textContent = 'Dark Mode';
-      }
-      
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('themeText').textContent = isDark ? 'Light' : 'Dark';
+      document.getElementById('mobileThemeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('mobileThemeText').textContent = isDark ? 'Light Mode' : 'Dark Mode';
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
-
-    // Notification settings
+    
     function toggleNotification(type) {
       notificationSettings[type] = !notificationSettings[type];
       saveNotificationSettings();
-      
-      // Sync with desktop and mobile toggles
       const desktopToggle = document.getElementById(`${type}Toggle`);
       const mobileToggle = document.getElementById(`mobile${type.charAt(0).toUpperCase() + type.slice(1)}Toggle`);
-      
       if (desktopToggle) desktopToggle.checked = notificationSettings[type];
       if (mobileToggle) mobileToggle.checked = notificationSettings[type];
-      
-      // Show/hide notification options based on main toggle
       if (type === 'enabled') {
         const desktopOptions = document.getElementById('desktopNotificationOptions');
         const mobileOptions = document.getElementById('mobileNotificationOptions');
         if (desktopOptions) desktopOptions.style.display = notificationSettings[type] ? 'block' : 'none';
         if (mobileOptions) mobileOptions.style.display = notificationSettings[type] ? 'block' : 'none';
-      }
-      
-      if (type === 'enabled' && notificationSettings[type]) {
-        requestNotificationPermission().then(() => {
-          showNotification(
-            'Notifications Enabled',
-            'You will now receive reminders before your duties start',
-            'success'
-          );
-          scheduleAllNotifications();
-        });
-      } else if (type === 'enabled' && !notificationSettings[type]) {
-        clearAllNotifications();
-        showNotification(
-          'Notifications Disabled',
-          'You will no longer receive duty reminders',
-          'info'
-        );
-      } else {
-        showNotification(
-          'Settings Updated',
-          `${type === 'dailySummary' ? 'Daily Summary' : 'Overtime Alerts'} ${notificationSettings[type] ? 'enabled' : 'disabled'}`,
-          'success'
-        );
+        if (notificationSettings[type]) { requestNotificationPermission().then(() => { scheduleAllNotifications(); }); }
+        else { clearAllNotifications(); }
       }
     }
-
-    // Notification option settings (24h, 1h, 30min)
+    
     function toggleNotificationOption(option) {
       notificationSettings[option] = !notificationSettings[option];
       saveNotificationSettings();
-      
-      // Sync with desktop and mobile toggles
       const desktopToggle = document.getElementById(`${option}Toggle`);
       const mobileToggle = document.getElementById(`mobile${option.charAt(0).toUpperCase() + option.slice(1)}Toggle`);
-      
       if (desktopToggle) desktopToggle.checked = notificationSettings[option];
       if (mobileToggle) mobileToggle.checked = notificationSettings[option];
-      
-      showNotification(
-        'Notification Setting Updated',
-        `${option === '24hour' ? '24 Hours Before' : option === '1hour' ? '1 Hour Before' : '30 Minutes Before'} notifications ${notificationSettings[option] ? 'enabled' : 'disabled'}`,
-        'success'
-      );
     }
-
-    // Test notification function
+    
     function testNotification() {
-      if (!notificationSettings.enabled) {
-        showNotification('Notifications Disabled', 'Please enable notifications first', 'warning');
-        return;
-      }
-      
-      showNotification(
-        'Test Notification',
-        'This is a test notification. You will receive similar alerts 24h, 1h, and 30min before your duties.',
-        'info'
-      );
-      
-      // Also test browser notification
-      if ('Notification' in window && Notification.permission === 'granted') {
-        showBrowserNotification('Test Notification', 'This notification will appear outside the app');
-      }
+      if (!notificationSettings.enabled) { showNotification('Notifications Disabled', 'Please enable notifications first', 'warning'); return; }
+      showNotification('Test Notification', 'This is a test notification. You will receive similar alerts before your duties.', 'info');
+      sendBackendNotification('Test Notification', 'Your push notification system is working!', '', '', 'test');
     }
-
-    // Duty management functions
+    
     function addDuty() {
       const date = document.getElementById('dutyDate').value;
       const startTime = document.getElementById('startTime').value;
       const endTime = document.getElementById('endTime').value;
       const type = document.getElementById('dutyType').value;
-      const notes = document.getElementById('dutyNotes').value;
-
-      if (!date || !startTime || !endTime) {
-        showNotification('Error', 'Please fill in all required fields', 'error');
-        return;
-      }
-
-      // Check if duty already exists for this date
-      const existingDuty = duties.find(duty => duty.date === date);
-      if (existingDuty) {
-        showNotification('Error', 'Duty already exists for this date', 'error');
-        return;
-      }
-
-      const newDuty = {
-        id: generateId(),
-        date,
-        startTime,
-        endTime,
-        type,
-        notes,
-        createdAt: new Date().toISOString()
-      };
-
+      const notesVal = document.getElementById('dutyNotes').value;
+      if (!date || !startTime || !endTime) { showNotification('Error', 'Please fill in all required fields', 'error'); return; }
+      if (duties.find(duty => duty.date === date)) { showNotification('Error', 'Duty already exists for this date', 'error'); return; }
+      const newDuty = { id: generateId(), date, startTime, endTime, type, notes: notesVal, createdAt: new Date().toISOString() };
       duties.push(newDuty);
       saveDuties();
       renderCalendar();
-      
-      // Clear form
       document.getElementById('dutyDate').value = getCurrentDate();
       document.getElementById('startTime').value = '08:00';
       document.getElementById('endTime').value = '17:00';
       document.getElementById('dutyType').value = 'regular';
       document.getElementById('dutyNotes').value = '';
-
-      showNotification('Success', 'Duty added successfully', 'success');
+      showNotification('Success', 'Duty added successfully!', 'success');
+      sendBackendNotification('New Duty Added', `You have a new ${type} duty on ${date} from ${startTime} to ${endTime}`, date, startTime, type);
     }
-
+    
     function addDutyMobile() {
       const date = document.getElementById('mobileDutyDate').value;
       const startTime = document.getElementById('mobileStartTime').value;
       const endTime = document.getElementById('mobileEndTime').value;
       const type = document.getElementById('mobileDutyType').value;
-      const notes = document.getElementById('mobileDutyNotes').value;
-
-      if (!date || !startTime || !endTime) {
-        showNotification('Error', 'Please fill in all required fields', 'error');
-        return;
-      }
-
-      // Check if duty already exists for this date
-      const existingDuty = duties.find(duty => duty.date === date);
-      if (existingDuty) {
-        showNotification('Error', 'Duty already exists for this date', 'error');
-        return;
-      }
-
-      const newDuty = {
-        id: generateId(),
-        date,
-        startTime,
-        endTime,
-        type,
-        notes,
-        createdAt: new Date().toISOString()
-      };
-
+      const notesVal = document.getElementById('mobileDutyNotes').value;
+      if (!date || !startTime || !endTime) { showNotification('Error', 'Please fill in all required fields', 'error'); return; }
+      if (duties.find(duty => duty.date === date)) { showNotification('Error', 'Duty already exists for this date', 'error'); return; }
+      const newDuty = { id: generateId(), date, startTime, endTime, type, notes: notesVal, createdAt: new Date().toISOString() };
       duties.push(newDuty);
       saveDuties();
       renderCalendar();
-      
-      // Clear mobile form
       document.getElementById('mobileDutyDate').value = getCurrentDate();
       document.getElementById('mobileStartTime').value = '08:00';
       document.getElementById('mobileEndTime').value = '17:00';
       document.getElementById('mobileDutyType').value = 'regular';
       document.getElementById('mobileDutyNotes').value = '';
-
-      showNotification('Success', 'Duty added successfully', 'success');
+      showNotification('Success', 'Duty added successfully!', 'success');
       toggleMobileMenu();
     }
-
+    
     function removeDuty() {
       const date = document.getElementById('dutyDate').value;
-      if (!date) {
-        showNotification('Error', 'Please select a date', 'error');
-        return;
-      }
-
+      if (!date) { showNotification('Error', 'Please select a date', 'error'); return; }
       const dutyIndex = duties.findIndex(duty => duty.date === date);
-      if (dutyIndex === -1) {
-        showNotification('Error', 'No duty found for selected date', 'error');
-        return;
-      }
-
-      // Clear any notifications for this duty
+      if (dutyIndex === -1) { showNotification('Error', 'No duty found for selected date', 'error'); return; }
       clearDutyNotifications(duties[dutyIndex].id);
-      
       duties.splice(dutyIndex, 1);
       saveDuties();
       renderCalendar();
       showNotification('Success', 'Duty removed successfully', 'success');
     }
-
+    
     function removeDutyMobile() {
       const date = document.getElementById('mobileDutyDate').value;
-      if (!date) {
-        showNotification('Error', 'Please select a date', 'error');
-        return;
-      }
-
+      if (!date) { showNotification('Error', 'Please select a date', 'error'); return; }
       const dutyIndex = duties.findIndex(duty => duty.date === date);
-      if (dutyIndex === -1) {
-        showNotification('Error', 'No duty found for selected date', 'error');
-        return;
-      }
-
-      // Clear any notifications for this duty
+      if (dutyIndex === -1) { showNotification('Error', 'No duty found for selected date', 'error'); return; }
       clearDutyNotifications(duties[dutyIndex].id);
-      
       duties.splice(dutyIndex, 1);
       saveDuties();
       renderCalendar();
       showNotification('Success', 'Duty removed successfully', 'success');
       toggleMobileMenu();
     }
-
-    // Clear notifications for a specific duty
-    function clearDutyNotifications(dutyId) {
-      ['24hour', '1hour', '30min'].forEach(period => {
-        const key = `${dutyId}-${period}`;
-        if (notificationTimeouts[key]) {
-          clearTimeout(notificationTimeouts[key]);
-          delete notificationTimeouts[key];
-        }
-      });
-    }
-
-    // Notes functions
-    function showNotesView() {
-      const popup = document.getElementById('allNotesPopup');
-      popup.classList.add('active');
-      renderAllNotes();
-    }
-
-    function hideAllNotesPopup() {
-      const popup = document.getElementById('allNotesPopup');
-      popup.classList.remove('active');
-    }
-
-    function closeAllNotesPopupOnBackdrop(event) {
-      if (event.target === event.currentTarget) {
-        hideAllNotesPopup();
-      }
-    }
-
+    
+    // Notes functions (keep your existing note functions)
+    function showNotesView() { document.getElementById('allNotesPopup').classList.add('active'); renderAllNotes(); }
+    function hideAllNotesPopup() { document.getElementById('allNotesPopup').classList.remove('active'); }
+    function closeAllNotesPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideAllNotesPopup(); }
+    
     function renderAllNotes() {
       const notesList = document.getElementById('allNotesList');
       notesList.innerHTML = '';
-
-      // Sort notes by date (newest first)
       const sortedNotes = [...notes].sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      if (sortedNotes.length === 0) {
-        notesList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No notes yet. Add your first note!</div>';
-        return;
-      }
-
+      if (sortedNotes.length === 0) { notesList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No notes yet. Add your first note!</div>'; return; }
       sortedNotes.forEach(note => {
         const noteElement = document.createElement('div');
         noteElement.className = 'note-item';
-        noteElement.innerHTML = `
-          <div class="note-date">${formatDate(note.date)}</div>
-          <div class="note-content">${note.content}</div>
-          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNoteFromAllView('${note.id}')">
-              <span>🗑️</span> Delete
-            </button>
-          </div>
-        `;
+        noteElement.innerHTML = `<div class="note-date">${formatDate(note.date)}</div><div class="note-content">${note.content}</div><div style="display: flex; justify-content: flex-end; margin-top: 8px;"><button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNoteFromAllView('${note.id}')"><span>🗑️</span> Delete</button></div>`;
         notesList.appendChild(noteElement);
       });
     }
-
+    
     function addNewNote() {
       const date = document.getElementById('newNoteDate').value;
       const content = document.getElementById('newNoteContent').value;
-
-      if (!date || !content) {
-        showNotification('Error', 'Please fill in all fields', 'error');
-        return;
-      }
-
-      const newNote = {
-        id: generateId(),
-        date,
-        content,
-        createdAt: new Date().toISOString()
-      };
-
-      notes.push(newNote);
+      if (!date || !content) { showNotification('Error', 'Please fill in all fields', 'error'); return; }
+      notes.push({ id: generateId(), date, content, createdAt: new Date().toISOString() });
       saveNotes();
-      
-      // Clear form
       document.getElementById('newNoteDate').value = '';
       document.getElementById('newNoteContent').value = '';
-      
-      // Refresh notes list
       renderAllNotes();
-      
       showNotification('Success', 'Note added successfully', 'success');
     }
-
+    
     function deleteNoteFromAllView(noteId) {
       const noteIndex = notes.findIndex(note => note.id === noteId);
-      
-      if (noteIndex !== -1) {
-        notes.splice(noteIndex, 1);
-        saveNotes();
-        renderAllNotes();
-        showNotification('Success', 'Note deleted successfully', 'success');
-      }
+      if (noteIndex !== -1) { notes.splice(noteIndex, 1); saveNotes(); renderAllNotes(); showNotification('Success', 'Note deleted successfully', 'success'); }
     }
-
-    // Notes Popup Functions
-    function showNotesPopup(dateStr) {
-      selectedDate = dateStr;
-      const popup = document.getElementById('notesPopup');
-      const title = document.getElementById('notesPopupTitle');
-      const dateSpan = document.getElementById('notesPopupDate');
-      
-      dateSpan.textContent = formatDate(dateStr);
-      popup.classList.add('active');
-      
-      // Load existing notes for this date
-      renderExistingNotes(dateStr);
-      
-      // Clear the textarea
-      document.getElementById('notesPopupContent').value = '';
-    }
-
-    function hideNotesPopup() {
-      const popup = document.getElementById('notesPopup');
-      popup.classList.remove('active');
-    }
-
-    function closeNotesPopupOnBackdrop(event) {
-      if (event.target === event.currentTarget) {
-        hideNotesPopup();
-      }
-    }
-
+    
+    function showNotesPopup(dateStr) { selectedDate = dateStr; document.getElementById('notesPopup').classList.add('active'); document.getElementById('notesPopupDate').textContent = formatDate(dateStr); renderExistingNotes(dateStr); document.getElementById('notesPopupContent').value = ''; }
+    function hideNotesPopup() { document.getElementById('notesPopup').classList.remove('active'); }
+    function closeNotesPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideNotesPopup(); }
+    
     function renderExistingNotes(dateStr) {
       const notesList = document.getElementById('existingNotesList');
       notesList.innerHTML = '';
-      
-      // Get notes for this date
       const dateNotes = notes.filter(note => note.date === dateStr);
-      
-      if (dateNotes.length === 0) {
-        notesList.innerHTML = '<div style="text-align: center; padding: 10px; color: var(--text-secondary);">No notes for this date</div>';
-        return;
-      }
-      
+      if (dateNotes.length === 0) { notesList.innerHTML = '<div style="text-align: center; padding: 10px; color: var(--text-secondary);">No notes for this date</div>'; return; }
       dateNotes.forEach(note => {
         const noteElement = document.createElement('div');
         noteElement.className = 'note-item';
-        noteElement.innerHTML = `
-          <div class="note-content">${note.content}</div>
-          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNote('${note.id}')">
-              <span>🗑️</span> Delete
-            </button>
-          </div>
-        `;
+        noteElement.innerHTML = `<div class="note-content">${note.content}</div><div style="display: flex; justify-content: flex-end; margin-top: 8px;"><button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="deleteNote('${note.id}')"><span>🗑️</span> Delete</button></div>`;
         notesList.appendChild(noteElement);
       });
     }
-
+    
     function saveNoteFromPopup() {
       const content = document.getElementById('notesPopupContent').value;
-      
-      if (!content) {
-        showNotification('Error', 'Please enter a note', 'error');
-        return;
-      }
-
-      const newNote = {
-        id: generateId(),
-        date: selectedDate,
-        content,
-        createdAt: new Date().toISOString()
-      };
-
-      notes.push(newNote);
+      if (!content) { showNotification('Error', 'Please enter a note', 'error'); return; }
+      notes.push({ id: generateId(), date: selectedDate, content, createdAt: new Date().toISOString() });
       saveNotes();
       renderExistingNotes(selectedDate);
       document.getElementById('notesPopupContent').value = '';
       showNotification('Success', 'Note added successfully', 'success');
     }
-
+    
     function deleteNote(noteId) {
       const noteIndex = notes.findIndex(note => note.id === noteId);
-      
-      if (noteIndex !== -1) {
-        notes.splice(noteIndex, 1);
-        saveNotes();
-        renderExistingNotes(selectedDate);
-        showNotification('Success', 'Note deleted successfully', 'success');
-      }
+      if (noteIndex !== -1) { notes.splice(noteIndex, 1); saveNotes(); renderExistingNotes(selectedDate); showNotification('Success', 'Note deleted successfully', 'success'); }
     }
-
-    // Duty Popup Functions
+    
+    // Popup notes
+    function renderPopupNotes(dateStr) {
+      const notesList = document.getElementById('popupNotesList');
+      if (!notesList) return;
+      notesList.innerHTML = '';
+      const dateNotes = notes.filter(note => note.date === dateStr);
+      if (dateNotes.length === 0) { notesList.innerHTML = '<div style="text-align:center; padding: 12px; color: var(--text-secondary);">No notes for this date yet</div>'; return; }
+      dateNotes.forEach(note => {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'popup-note-item';
+        noteElement.innerHTML = `<div class="popup-note-item-content">${note.content}</div><div class="popup-note-item-date">${new Date(note.createdAt).toLocaleString()}</div><div class="popup-note-actions"><button class="btn btn-secondary" onclick="editPopupNote('${note.id}')">Edit</button><button class="btn btn-danger" onclick="deletePopupNote('${note.id}')">Delete</button></div>`;
+        notesList.appendChild(noteElement);
+      });
+    }
+    
+    function addOrUpdatePopupNote() {
+      const content = document.getElementById('popupNoteInput').value.trim();
+      if (!content) { showNotification('Error', 'Enter a note before adding', 'error'); return; }
+      if (editingPopupNoteId) {
+        const noteIndex = notes.findIndex(note => note.id === editingPopupNoteId);
+        if (noteIndex !== -1) { notes[noteIndex].content = content; notes[noteIndex].updatedAt = new Date().toISOString(); showNotification('Success', 'Note updated', 'success'); }
+      } else {
+        notes.push({ id: generateId(), date: selectedDate, content, createdAt: new Date().toISOString() });
+        showNotification('Success', 'Note added to this date', 'success');
+      }
+      saveNotes();
+      renderPopupNotes(selectedDate);
+      document.getElementById('popupNoteInput').value = '';
+      document.getElementById('popupNoteAddBtn').textContent = 'Add';
+      editingPopupNoteId = null;
+    }
+    
+    function editPopupNote(noteId) {
+      const note = notes.find(item => item.id === noteId);
+      if (!note) return;
+      document.getElementById('popupNoteInput').value = note.content;
+      document.getElementById('popupNoteAddBtn').textContent = 'Update';
+      editingPopupNoteId = noteId;
+    }
+    
+    function deletePopupNote(noteId) {
+      const noteIndex = notes.findIndex(note => note.id === noteId);
+      if (noteIndex === -1) return;
+      notes.splice(noteIndex, 1);
+      saveNotes();
+      renderPopupNotes(selectedDate);
+      showNotification('Success', 'Note removed', 'success');
+    }
+    
+    // Todo functions
+    function renderTodoList(dateStr) {
+      const todoList = document.getElementById('todoList');
+      if (!todoList) return;
+      todoList.innerHTML = '';
+      const dateTodos = todoItems.filter(item => item.date === dateStr);
+      if (dateTodos.length === 0) { todoList.innerHTML = '<div style="text-align: center; padding: 12px; color: var(--text-secondary);">No tasks yet for this date</div>'; return; }
+      dateTodos.forEach(item => {
+        const todoElement = document.createElement('div');
+        todoElement.className = 'todo-item';
+        todoElement.innerHTML = `<div class="todo-task ${item.completed ? 'todo-item-complete' : ''}"><label><input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleTodoComplete('${item.id}')"><span>${item.text}</span></label></div><button class="btn btn-outline" style="padding: 8px 12px;" onclick="deleteTodoItem('${item.id}')">Delete</button>`;
+        todoList.appendChild(todoElement);
+      });
+    }
+    
+    function addTodoItem() {
+      const input = document.getElementById('todoInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) { showNotification('Error', 'Please enter a task', 'error'); return; }
+      todoItems.push({ id: generateId(), date: selectedDate, text, completed: false, createdAt: new Date().toISOString() });
+      saveTodoItems();
+      input.value = '';
+      renderTodoList(selectedDate);
+      showNotification('Task added', 'Your task has been saved for this date', 'success');
+    }
+    
+    function toggleTodoComplete(todoId) {
+      const todoIndex = todoItems.findIndex(item => item.id === todoId);
+      if (todoIndex === -1) return;
+      todoItems[todoIndex].completed = !todoItems[todoIndex].completed;
+      saveTodoItems();
+      renderTodoList(selectedDate);
+    }
+    
+    function deleteTodoItem(todoId) {
+      const todoIndex = todoItems.findIndex(item => item.id === todoId);
+      if (todoIndex === -1) return;
+      todoItems.splice(todoIndex, 1);
+      saveTodoItems();
+      renderTodoList(selectedDate);
+      showNotification('Task removed', 'The task was deleted successfully', 'success');
+    }
+    
+    // Duty popup functions
+    function togglePopupDutyTypeInput() {
+      const select = document.getElementById('popupDutyType');
+      const custom = document.getElementById('popupDutyTypeCustom');
+      if (!select || !custom) return;
+      if (select.value === 'custom') { custom.style.display = 'block'; }
+      else { custom.style.display = 'none'; custom.value = ''; }
+    }
+    
     function showDutyPopup(dateStr) {
       selectedDate = dateStr;
       const popup = document.getElementById('dutyPopup');
-      const dateSpan = document.getElementById('dutyPopupDate');
-      
-      dateSpan.textContent = formatDate(dateStr);
+      document.getElementById('dutyPopupDate').textContent = formatDate(dateStr);
       popup.classList.add('active');
-      
-      // Load existing duty for this date
       renderExistingDuty(dateStr);
+      renderTodoList(dateStr);
+      renderPopupNotes(dateStr);
+      document.getElementById('popupNoteInput').value = '';
+      document.getElementById('popupNoteAddBtn').textContent = 'Add';
+      editingPopupNoteId = null;
+      document.getElementById('todoInput').value = '';
     }
-
-    function hideDutyPopup() {
-      const popup = document.getElementById('dutyPopup');
-      popup.classList.remove('active');
-    }
-
-    function closeDutyPopupOnBackdrop(event) {
-      if (event.target === event.currentTarget) {
-        hideDutyPopup();
-      }
-    }
-
+    
+    function hideDutyPopup() { document.getElementById('dutyPopup').classList.remove('active'); }
+    function closeDutyPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideDutyPopup(); }
+    
     function renderExistingDuty(dateStr) {
       const dutyInfo = document.getElementById('existingDutyInfo');
       const deleteBtn = document.getElementById('popupDeleteBtn');
-      
-      // Get duty for this date
       const duty = duties.find(d => d.date === dateStr);
-      
       if (duty) {
-        dutyInfo.innerHTML = `
-          <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <strong>${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} Duty</strong>
-              <span>${duty.startTime} - ${duty.endTime}</span>
-            </div>
-            ${duty.notes ? `<div style="font-size: 14px;">${duty.notes}</div>` : ''}
-          </div>
-        `;
+        dutyInfo.innerHTML = `<div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><strong>${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} Duty</strong><span>${duty.startTime} - ${duty.endTime}</span></div>${duty.notes ? `<div style="font-size: 14px;">${duty.notes}</div>` : ''}</div>`;
         deleteBtn.style.display = 'block';
-        
-        // Pre-fill form with existing duty data
         document.getElementById('popupStartTime').value = duty.startTime;
         document.getElementById('popupEndTime').value = duty.endTime;
-        document.getElementById('popupDutyType').value = duty.type;
-        document.getElementById('popupDutyNotes').value = duty.notes || '';
+        const popupTypeSelect = document.getElementById('popupDutyType');
+        const popupTypeCustom = document.getElementById('popupDutyTypeCustom');
+        const hasOption = Array.from(popupTypeSelect.options).some(o => o.value === duty.type);
+        if (hasOption) {
+          popupTypeSelect.value = duty.type;
+          if (popupTypeCustom) popupTypeCustom.value = '';
+        } else {
+          popupTypeSelect.value = 'custom';
+          if (popupTypeCustom) popupTypeCustom.value = duty.type;
+        }
+        togglePopupDutyTypeInput();
       } else {
         dutyInfo.innerHTML = '<div style="text-align: center; padding: 10px; color: var(--text-secondary);">No duty scheduled for this date</div>';
         deleteBtn.style.display = 'none';
-        
-        // Reset form to default values
         document.getElementById('popupStartTime').value = '08:00';
         document.getElementById('popupEndTime').value = '17:00';
         document.getElementById('popupDutyType').value = 'regular';
-        document.getElementById('popupDutyNotes').value = '';
+        const customReset = document.getElementById('popupDutyTypeCustom');
+        if (customReset) customReset.value = '';
+        togglePopupDutyTypeInput();
       }
     }
-
+    
     function saveDutyFromPopup() {
       const date = selectedDate;
       const startTime = document.getElementById('popupStartTime').value;
       const endTime = document.getElementById('popupEndTime').value;
-      const type = document.getElementById('popupDutyType').value;
-      const notes = document.getElementById('popupDutyNotes').value;
-
-      if (!date || !startTime || !endTime) {
-        showNotification('Error', 'Please fill in all required fields', 'error');
-        return;
-      }
-
-      // Check if duty already exists for this date
-      const existingDutyIndex = duties.findIndex(duty => duty.date === date);
-      
-      if (existingDutyIndex !== -1) {
-        // Update existing duty
-        duties[existingDutyIndex] = {
-          ...duties[existingDutyIndex],
-          startTime,
-          endTime,
-          type,
-          notes
-        };
+      let type = document.getElementById('popupDutyType').value;
+      const customInput = document.getElementById('popupDutyTypeCustom');
+      if (type === 'custom' && customInput && customInput.value.trim()) type = customInput.value.trim();
+      if (!startTime || !endTime) { showNotification('Error', 'Please fill in all required fields', 'error'); return; }
+      const existingIndex = duties.findIndex(duty => duty.date === date);
+      if (existingIndex !== -1) {
+        clearDutyNotifications(duties[existingIndex].id);
+        duties[existingIndex] = { ...duties[existingIndex], startTime, endTime, type };
       } else {
-        // Create new duty
-        const newDuty = {
-          id: generateId(),
-          date,
-          startTime,
-          endTime,
-          type,
-          notes,
-          createdAt: new Date().toISOString()
-        };
-        duties.push(newDuty);
+        duties.push({ id: generateId(), date, startTime, endTime, type, notes: '', createdAt: new Date().toISOString() });
       }
-      
       saveDuties();
       renderCalendar();
       hideDutyPopup();
       showNotification('Success', 'Duty saved successfully', 'success');
     }
-
+    
     function deleteDutyFromPopup() {
       const date = selectedDate;
-      
       const dutyIndex = duties.findIndex(duty => duty.date === date);
-      if (dutyIndex === -1) {
-        showNotification('Error', 'No duty found for this date', 'error');
-        return;
-      }
-
-      // Clear any notifications for this duty
+      if (dutyIndex === -1) { showNotification('Error', 'No duty found for this date', 'error'); return; }
       clearDutyNotifications(duties[dutyIndex].id);
-      
       duties.splice(dutyIndex, 1);
       saveDuties();
       renderCalendar();
       hideDutyPopup();
       showNotification('Success', 'Duty deleted successfully', 'success');
     }
-
+    
     // Calendar functions
-    function changeMonth(direction) {
-      currentMonth.setMonth(currentMonth.getMonth() + direction);
-      renderCalendar();
-    }
-
+    function changeMonth(direction) { currentMonth.setMonth(currentMonth.getMonth() + direction); renderCalendar(); }
+    
     function handleDateClick(dateStr) {
       selectedDate = dateStr;
-      
-      // Update form dates
       document.getElementById('dutyDate').value = dateStr;
       document.getElementById('mobileDutyDate').value = dateStr;
-      
-      // Show duty popup instead of notes popup
       showDutyPopup(dateStr);
-      
-      // Show duty info if exists
       const duty = duties.find(d => d.date === dateStr);
-      if (duty) {
-        showNotification(
-          'Duty Info',
-          `${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} duty from ${duty.startTime} to ${duty.endTime}`,
-          'info'
-        );
-      }
+      if (duty) { showNotification('Duty Info', `${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} duty from ${duty.startTime} to ${duty.endTime}`, 'info'); }
     }
-
+    
     function renderCalendar() {
       const calendar = document.getElementById('calendarGrid');
       const title = document.getElementById('calendarTitle');
-      
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth();
-      
-      const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       title.textContent = `${monthNames[month]} ${year}`;
-      
-      // Clear calendar
       calendar.innerHTML = '';
-      
-      // Day names - Monday to Sunday
       const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      dayNames.forEach(day => {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day-name';
-        dayElement.textContent = day;
-        calendar.appendChild(dayElement);
-      });
-      
-      // Get first day of month (0 = Sunday, 1 = Monday, etc.)
+      dayNames.forEach(day => { const dayElement = document.createElement('div'); dayElement.className = 'calendar-day-name'; dayElement.textContent = day; calendar.appendChild(dayElement); });
       const firstDay = new Date(year, month, 1).getDay();
-      // Convert to Monday = 0, Tuesday = 1, etc.
       const mondayFirstDay = (firstDay === 0) ? 6 : firstDay - 1;
-      
-      // Get number of days in month
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
-      // Add empty cells for days before the first day of the month
-      for (let i = 0; i < mondayFirstDay; i++) {
-        const emptyElement = document.createElement('div');
-        emptyElement.className = 'calendar-date other-month';
-        calendar.appendChild(emptyElement);
-      }
-      
-      // Add days of the month
+      for (let i = 0; i < mondayFirstDay; i++) { const emptyElement = document.createElement('div'); emptyElement.className = 'calendar-date other-month'; calendar.appendChild(emptyElement); }
       const today = getCurrentDate();
-      
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const duty = duties.find(d => d.date === dateStr);
         const dateNotes = notes.filter(note => note.date === dateStr);
-        
         const dateElement = document.createElement('div');
         let classes = 'calendar-date';
-        
-        if (dateStr === today) {
-          classes += ' today';
-        }
-        
-        if (duty) {
-          classes += ' duty ' + duty.type;
-        }
-        
+        if (dateStr === today) classes += ' today';
+        if (duty) classes += ' duty ' + duty.type;
         dateElement.className = classes;
         dateElement.onclick = () => handleDateClick(dateStr);
-        
         const dateNumber = document.createElement('div');
         dateNumber.className = 'date-number';
         dateNumber.textContent = day;
         dateElement.appendChild(dateNumber);
-        
-        // Add note indicator if there are notes for this date
         if (dateNotes.length > 0) {
           const noteIndicator = document.createElement('div');
           noteIndicator.className = 'duty-time';
@@ -2653,563 +1441,106 @@
           noteIndicator.textContent = '📝 ' + dateNotes.length;
           dateElement.appendChild(noteIndicator);
         }
-        
         if (duty) {
           const dutyTime = document.createElement('div');
           dutyTime.className = 'duty-time';
           dutyTime.textContent = duty.startTime;
           dateElement.appendChild(dutyTime);
         }
-        
         calendar.appendChild(dateElement);
       }
     }
-
-    // Stats functions
+    
     function updateStats() {
       const currentDate = new Date();
-      const currentMonthDuties = duties.filter(duty => {
-        const dutyDate = new Date(duty.date);
-        return dutyDate.getMonth() === currentDate.getMonth() && 
-               dutyDate.getFullYear() === currentDate.getFullYear();
-      });
-
+      const currentMonthDuties = duties.filter(duty => { const dutyDate = new Date(duty.date); return dutyDate.getMonth() === currentDate.getMonth() && dutyDate.getFullYear() === currentDate.getFullYear(); });
       const futureDuties = duties.filter(duty => new Date(duty.date) > currentDate);
-      const nextDuty = futureDuties.length > 0 ? 
-        formatDate(futureDuties.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date) : '--';
-
-      const totalHours = duties.reduce((sum, duty) => {
-        const start = new Date(`2000-01-01T${duty.startTime}`);
-        const end = new Date(`2000-01-01T${duty.endTime}`);
-        const hours = (end - start) / (1000 * 60 * 60);
-        return sum + (hours > 0 ? hours : 0);
-      }, 0);
-
+      const nextDuty = futureDuties.length > 0 ? formatDate(futureDuties.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date) : '--';
+      const totalHours = duties.reduce((sum, duty) => { const start = new Date(`2000-01-01T${duty.startTime}`); const end = new Date(`2000-01-01T${duty.endTime}`); const hours = (end - start) / (1000 * 60 * 60); return sum + (hours > 0 ? hours : 0); }, 0);
       const avgHours = duties.length > 0 ? Math.round(totalHours / duties.length) : 0;
-
       document.getElementById('totalDuties').textContent = duties.length;
       document.getElementById('monthDuties').textContent = currentMonthDuties.length;
       document.getElementById('nextDuty').textContent = nextDuty;
       document.getElementById('avgHours').textContent = avgHours;
     }
-
-    // Analytics functions
-    function showAnalytics() {
-      const modal = document.getElementById('analyticsModal');
-      modal.classList.add('active');
-      renderAnalytics();
-    }
-
-    function hideAnalytics() {
-      const modal = document.getElementById('analyticsModal');
-      modal.classList.remove('active');
-    }
-
-    function closeModalOnBackdrop(event) {
-      if (event.target === event.currentTarget) {
-        hideAnalytics();
-      }
-    }
-
+    
+    // Analytics
+    function showAnalytics() { document.getElementById('analyticsModal').classList.add('active'); renderAnalytics(); }
+    function hideAnalytics() { document.getElementById('analyticsModal').classList.remove('active'); }
+    function closeModalOnBackdrop(event) { if (event.target === event.currentTarget) hideAnalytics(); }
+    
     function renderAnalytics() {
-      // Calculate analytics data
-      const dutyTypes = {
-        regular: 0,
-        overtime: 0,
-        holiday: 0,
-        training: 0,
-        meeting: 0,
-        emergency: 0
-      };
-
-      let totalHours = 0;
-      let overtimeHours = 0;
-      let holidayCount = 0;
-      let totalDutyLength = 0;
-
+      const dutyTypes = { regular: 0, overtime: 0, holiday: 0, training: 0, meeting: 0, emergency: 0 };
+      let totalHours = 0, overtimeHours = 0, holidayCount = 0, totalDutyLength = 0;
       duties.forEach(duty => {
-        // Count duty types
         dutyTypes[duty.type] = (dutyTypes[duty.type] || 0) + 1;
-        
-        // Calculate hours
         const start = new Date(`2000-01-01T${duty.startTime}`);
         const end = new Date(`2000-01-01T${duty.endTime}`);
         const hours = (end - start) / (1000 * 60 * 60);
-        
         totalHours += hours;
         totalDutyLength += hours;
-        
-        if (duty.type === 'overtime') {
-          overtimeHours += hours;
-        }
-        
-        if (duty.type === 'holiday') {
-          holidayCount++;
-        }
+        if (duty.type === 'overtime') overtimeHours += hours;
+        if (duty.type === 'holiday') holidayCount++;
       });
-
       const avgDutyLength = duties.length > 0 ? (totalDutyLength / duties.length).toFixed(1) : 0;
-
-      // Update stats
       document.getElementById('totalHours').textContent = Math.round(totalHours);
       document.getElementById('overtimeHours').textContent = Math.round(overtimeHours);
       document.getElementById('holidayCount').textContent = holidayCount;
       document.getElementById('avgDutyLength').textContent = avgDutyLength;
-
-      // Render duty type chart
+      
       const dutyTypeCtx = document.getElementById('dutyTypeChart').getContext('2d');
-      
-      // Destroy existing chart if it exists
-      if (window.dutyTypeChartInstance) {
-        window.dutyTypeChartInstance.destroy();
-      }
-      
-      const typeColors = [
-        'rgba(34, 197, 94, 0.7)',   // regular - green
-        'rgba(249, 115, 22, 0.7)',  // overtime - orange
-        'rgba(139, 92, 246, 0.7)',  // holiday - purple
-        'rgba(6, 182, 212, 0.7)',   // training - cyan
-        'rgba(236, 72, 153, 0.7)',  // meeting - pink
-        'rgba(220, 38, 38, 0.7)'    // emergency - red
-      ];
-      
+      if (window.dutyTypeChartInstance) window.dutyTypeChartInstance.destroy();
       window.dutyTypeChartInstance = new Chart(dutyTypeCtx, {
         type: 'doughnut',
-        data: {
-          labels: ['Regular', 'Overtime', 'Holiday', 'Training', 'Meeting', 'Emergency'],
-          datasets: [{
-            data: [
-              dutyTypes.regular,
-              dutyTypes.overtime,
-              dutyTypes.holiday,
-              dutyTypes.training,
-              dutyTypes.meeting,
-              dutyTypes.emergency
-            ],
-            backgroundColor: typeColors,
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Duty Types Distribution',
-              font: {
-                size: 16
-              }
-            },
-            legend: {
-              position: 'bottom'
-            }
-          }
-        }
+        data: { labels: ['Regular', 'Overtime', 'Holiday', 'Training', 'Meeting', 'Emergency'], datasets: [{ data: [dutyTypes.regular, dutyTypes.overtime, dutyTypes.holiday, dutyTypes.training, dutyTypes.meeting, dutyTypes.emergency], backgroundColor: ['rgba(34,197,94,0.7)','rgba(249,115,22,0.7)','rgba(139,92,246,0.7)','rgba(6,182,212,0.7)','rgba(236,72,153,0.7)','rgba(220,38,38,0.7)'], borderWidth: 1 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Duty Types Distribution', font: { size: 16 } }, legend: { position: 'bottom' } } }
       });
-
-      // Render monthly hours chart
+      
       const monthlyHoursCtx = document.getElementById('monthlyHoursChart').getContext('2d');
-      
-      // Destroy existing chart if it exists
-      if (window.monthlyHoursChartInstance) {
-        window.monthlyHoursChartInstance.destroy();
-      }
-      
-      // Calculate monthly hours
+      if (window.monthlyHoursChartInstance) window.monthlyHoursChartInstance.destroy();
       const monthlyHours = Array(12).fill(0);
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
       duties.forEach(duty => {
         const dutyDate = new Date(duty.date);
         const month = dutyDate.getMonth();
-        
         const start = new Date(`2000-01-01T${duty.startTime}`);
         const end = new Date(`2000-01-01T${duty.endTime}`);
         const hours = (end - start) / (1000 * 60 * 60);
-        
         monthlyHours[month] += hours;
       });
-      
       window.monthlyHoursChartInstance = new Chart(monthlyHoursCtx, {
         type: 'bar',
-        data: {
-          labels: monthNames,
-          datasets: [{
-            label: 'Hours',
-            data: monthlyHours,
-            backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            borderColor: 'rgba(59, 130, 246, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Monthly Hours',
-              font: {
-                size: 16
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Hours'
-              }
-            }
-          }
-        }
+        data: { labels: monthNames, datasets: [{ label: 'Hours', data: monthlyHours, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Monthly Hours', font: { size: 16 } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } } }
       });
-    }
-
-    function exportToPDF() {
-      // Initialize jsPDF
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Add title with logo
-      doc.setFontSize(22);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Duty Calendar Report', 105, 20, { align: 'center' });
-      
-      // Add decorative line
-      doc.setDrawColor(59, 130, 246);
-      doc.setLineWidth(0.5);
-      doc.line(30, 25, 180, 25);
-      
-      // Add date
-      doc.setFontSize(12);
-      doc.setTextColor(100);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, 32, { align: 'center' });
-      
-      // Add summary stats section
-      doc.setFontSize(16);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Summary Statistics', 20, 45);
-      
-      // Add summary box
-      doc.setFillColor(240, 240, 240);
-      doc.roundedRect(20, 50, 170, 30, 3, 3, 'F');
-      
-      const totalDuties = duties.length;
-      const currentMonthDuties = duties.filter(duty => {
-        const dutyDate = new Date(duty.date);
-        return dutyDate.getMonth() === currentMonth.getMonth() && 
-               dutyDate.getFullYear() === currentMonth.getFullYear();
-      }).length;
-      
-      const futureDuties = duties.filter(duty => new Date(duty.date) > new Date());
-      const nextDuty = futureDuties.length > 0 ? 
-        formatDate(futureDuties.sort((a, b) => new Date(a.date) - new Date(b.date))[0].date) : 'None';
-      
-      const totalHours = duties.reduce((sum, duty) => {
-        const start = new Date(`2000-01-01T${duty.startTime}`);
-        const end = new Date(`2000-01-01T${duty.endTime}`);
-        const hours = (end - start) / (1000 * 60 * 60);
-        return sum + (hours > 0 ? hours : 0);
-      }, 0);
-      
-      const avgHours = duties.length > 0 ? Math.round(totalHours / duties.length) : 0;
-      
-      doc.setFontSize(12);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Total Duties: ${totalDuties}`, 30, 60);
-      doc.text(`This Month: ${currentMonthDuties}`, 30, 70);
-      doc.text(`Next Duty: ${nextDuty}`, 100, 60);
-      doc.text(`Average Hours: ${avgHours}`, 100, 70);
-      
-      // Add calendar month view section
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Calendar: ${document.getElementById('calendarTitle').textContent}`, 105, 20, { align: 'center' });
-      
-      // Create calendar table
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-      const firstDay = new Date(year, month, 1).getDay();
-      const mondayFirstDay = (firstDay === 0) ? 6 : firstDay - 1;
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const calendarData = [];
-      
-      // Add empty cells for days before the first day of the month
-      let currentRow = Array(7).fill('');
-      
-      // Add days of the month
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const duty = duties.find(d => d.date === dateStr);
-        const dateNotes = notes.filter(note => note.date === dateStr);
-        
-        const dayOfWeek = new Date(dateStr).getDay();
-        const adjustedDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0
-        
-        if (day === 1) {
-          // Fill the beginning of the first row with empty cells
-          for (let i = 0; i < mondayFirstDay; i++) {
-            currentRow[i] = '';
-          }
-        }
-        
-        let cellContent = day.toString();
-        if (dateNotes.length > 0) {
-          cellContent += ` (${dateNotes.length}📝)`;
-        }
-        
-        currentRow[adjustedDayOfWeek] = {
-          content: cellContent,
-          styles: {
-            fillColor: duty ? [220, 255, 220] : [255, 255, 255],
-            textColor: duty ? [0, 100, 0] : [0, 0, 0],
-            fontStyle: dateStr === getCurrentDate() ? 'bold' : 'normal',
-            cellPadding: 5
-          }
-        };
-        
-        if (adjustedDayOfWeek === 6 || day === daysInMonth) {
-          calendarData.push([...currentRow]);
-          currentRow = Array(7).fill('');
-        }
-      }
-      
-      // Create the calendar table
-      doc.autoTable({
-        head: [dayNames],
-        body: calendarData,
-        startY: 30,
-        styles: {
-          halign: 'center',
-          valign: 'middle',
-          cellPadding: 5
-        },
-        headStyles: {
-          fillColor: [59, 130, 246],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          halign: 'center'
-        },
-        columnStyles: {
-          0: { cellWidth: 'auto' },
-          1: { cellWidth: 'auto' },
-          2: { cellWidth: 'auto' },
-          3: { cellWidth: 'auto' },
-          4: { cellWidth: 'auto' },
-          5: { cellWidth: 'auto' },
-          6: { cellWidth: 'auto' }
-        },
-        didDrawCell: (data) => {
-          // Add duty indicator
-          if (data.cell.raw && typeof data.cell.raw === 'object' && data.cell.raw.content) {
-            const day = parseInt(data.cell.raw.content);
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const duty = duties.find(d => d.date === dateStr);
-            
-            if (duty) {
-              doc.setFontSize(8);
-              doc.setTextColor(0, 100, 0);
-              doc.text(duty.startTime, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height - 5, {
-                align: 'center'
-              });
-            }
-          }
-        }
-      });
-      
-      // Add duties list section
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'bold');
-      doc.text('All Scheduled Duties', 105, 20, { align: 'center' });
-      
-      if (duties.length === 0) {
-        doc.setFontSize(12);
-        doc.setTextColor(100);
-        doc.setFont('helvetica', 'normal');
-        doc.text('No duties scheduled', 105, 30, { align: 'center' });
-      } else {
-        const dutiesData = duties.map(duty => [
-          formatDate(duty.date),
-          duty.startTime,
-          duty.endTime,
-          duty.type.charAt(0).toUpperCase() + duty.type.slice(1),
-          duty.notes || '-'
-        ]);
-        
-        doc.autoTable({
-          head: [['Date', 'Start', 'End', 'Type', 'Notes']],
-          body: dutiesData,
-          startY: 30,
-          styles: {
-            fontSize: 10,
-            cellPadding: 4,
-            overflow: 'linebreak',
-            valign: 'middle'
-          },
-          columnStyles: {
-            0: { cellWidth: 25, halign: 'center' },
-            1: { cellWidth: 20, halign: 'center' },
-            2: { cellWidth: 20, halign: 'center' },
-            3: { cellWidth: 25, halign: 'center' },
-            4: { cellWidth: 'auto', halign: 'left' }
-          },
-          headStyles: {
-            fillColor: [59, 130, 246],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'center'
-          },
-          alternateRowStyles: {
-            fillColor: [240, 240, 240]
-          },
-          margin: { top: 10 }
-        });
-      }
-      
-      // Add notes section
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.setTextColor(40);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Notes', 105, 20, { align: 'center' });
-      
-      if (notes.length === 0) {
-        doc.setFontSize(12);
-        doc.setTextColor(100);
-        doc.setFont('helvetica', 'normal');
-        doc.text('No notes available', 105, 30, { align: 'center' });
-      } else {
-        const notesData = notes.map(note => [
-          formatDate(note.date),
-          note.content
-        ]);
-        
-        doc.autoTable({
-          head: [['Date', 'Note']],
-          body: notesData,
-          startY: 30,
-          styles: {
-            fontSize: 10,
-            cellPadding: 4,
-            overflow: 'linebreak',
-            valign: 'middle'
-          },
-          columnStyles: {
-            0: { cellWidth: 30, halign: 'center' },
-            1: { cellWidth: 'auto', halign: 'left' }
-          },
-          headStyles: {
-            fillColor: [59, 130, 246],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'center'
-          },
-          alternateRowStyles: {
-            fillColor: [240, 240, 240]
-          },
-          margin: { top: 10 }
-        });
-      }
-      
-      // Add footer to each page
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(150);
-        doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: 'center' });
-        doc.text('Duty Calendar - Professional Scheduling', 20, 287);
-        doc.text(new Date().toLocaleDateString(), 190, 287, { align: 'right' });
-      }
-      
-      // Save the PDF
-      const fileName = `DutyCalendar_${new Date().toISOString().slice(0, 10)}.pdf`;
-      doc.save(fileName);
-      
-      showNotification('Export Successful', `PDF "${fileName}" has been generated and downloaded`, 'success');
-    }
-
-    // Touch swipe functions
-    function handleTouchStart(e) {
-      touchStartX = e.changedTouches[0].screenX;
     }
     
+    function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(20);
+      doc.text("Duty Calendar Report", 105, 20, { align: "center" });
+      doc.setFontSize(12);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 35, { align: "center" });
+      doc.setFontSize(14);
+      doc.text(`Total Duties: ${duties.length}`, 20, 55);
+      doc.save(`duty_calendar_${new Date().toISOString().slice(0,10)}.pdf`);
+      showNotification('Export Successful', 'PDF has been generated', 'success');
+    }
+    
+    function handleTouchStart(e) { touchStartX = e.changedTouches[0].screenX; }
     function handleTouchEnd(e) {
       touchEndX = e.changedTouches[0].screenX;
-      handleSwipe();
+      const threshold = 50;
+      const diff = touchEndX - touchStartX;
+      if (Math.abs(diff) > threshold) { if (diff > 0) changeMonth(-1); else changeMonth(1); }
     }
     
-    function handleSwipe() {
-      const threshold = 50; // Minimum swipe distance to trigger month change
-      const diff = touchEndX - touchStartX;
-      
-      if (Math.abs(diff) > threshold) {
-        if (diff > 0) {
-          // Swipe right - previous month
-          changeMonth(-1);
-        } else {
-          // Swipe left - next month
-          changeMonth(1);
-        }
-      }
-    }
-
-    // Check for notifications that should trigger immediately
-    function checkImmediateNotifications() {
-      if (!notificationSettings.enabled) return;
-      
-      const now = new Date();
-      
-      duties.forEach(duty => {
-        const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
-        const timeDiff = dutyDateTime - now;
-        
-        // Check for upcoming duties in the next 5 minutes
-        if (timeDiff > 0 && timeDiff < 5 * 60 * 1000) {
-          // Check if we haven't already shown this notification
-          const notificationKey = `${duty.id}-immediate`;
-          if (!localStorage.getItem(notificationKey)) {
-            showNotification(
-              'Duty Starting Soon', 
-              `Your ${duty.type} duty starts in ${Math.round(timeDiff / (60 * 1000))} minutes at ${formatTime(duty.startTime)}`,
-              'warning'
-            );
-            localStorage.setItem(notificationKey, 'true');
-            
-            // Remove the key after the duty time has passed
-            setTimeout(() => {
-              localStorage.removeItem(notificationKey);
-            }, timeDiff + 60000); // 1 minute after duty time
-          }
-        }
-      });
-    }
-
-    // Initialize app
+    // Initialize
     function initializeApp() {
-      // Set current date
       selectedDate = getCurrentDate();
       document.getElementById('dutyDate').value = selectedDate;
       document.getElementById('mobileDutyDate').value = selectedDate;
-      
-      // Load theme
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark') {
         document.body.classList.add('dark');
@@ -3218,15 +1549,12 @@
         document.getElementById('mobileThemeIcon').textContent = '☀️';
         document.getElementById('mobileThemeText').textContent = 'Light Mode';
       }
-      
-      // Load notification settings
       document.getElementById('notificationToggle').checked = notificationSettings.enabled;
       document.getElementById('dailySummaryToggle').checked = notificationSettings.dailySummary;
       document.getElementById('overtimeToggle').checked = notificationSettings.overtime;
       document.getElementById('24HourToggle').checked = notificationSettings['24hour'];
       document.getElementById('1HourToggle').checked = notificationSettings['1hour'];
       document.getElementById('30MinToggle').checked = notificationSettings['30min'];
-      
       document.getElementById('mobileNotificationToggle').checked = notificationSettings.enabled;
       document.getElementById('mobileDailySummaryToggle').checked = notificationSettings.dailySummary;
       document.getElementById('mobileOvertimeToggle').checked = notificationSettings.overtime;
@@ -3234,89 +1562,42 @@
       document.getElementById('mobile1HourToggle').checked = notificationSettings['1hour'];
       document.getElementById('mobile30MinToggle').checked = notificationSettings['30min'];
       
-      // Show/hide notification options based on main toggle
+      const manualDesktopDate = document.getElementById('manualNotificationDateDesktop');
+      const manualDesktopTime = document.getElementById('manualNotificationTimeDesktop');
+      const manualMobileDate = document.getElementById('manualNotificationDateMobile');
+      const manualMobileTime = document.getElementById('manualNotificationTimeMobile');
+      if (manualDesktopDate) manualDesktopDate.value = selectedDate;
+      if (manualMobileDate) manualMobileDate.value = selectedDate;
+      if (manualDesktopTime) manualDesktopTime.value = '09:00';
+      if (manualMobileTime) manualMobileTime.value = '09:00';
+      
       const desktopOptions = document.getElementById('desktopNotificationOptions');
       const mobileOptions = document.getElementById('mobileNotificationOptions');
       if (desktopOptions) desktopOptions.style.display = notificationSettings.enabled ? 'block' : 'none';
       if (mobileOptions) mobileOptions.style.display = notificationSettings.enabled ? 'block' : 'none';
       
-      // Add touch event listeners for swipe
       const calendarGrid = document.getElementById('calendarGrid');
       calendarGrid.addEventListener('touchstart', handleTouchStart, false);
       calendarGrid.addEventListener('touchend', handleTouchEnd, false);
       
-      // Render calendar and update stats
       renderCalendar();
       updateStats();
-      
-      // Request notification permission if enabled
-      if (notificationSettings.enabled) {
-        requestNotificationPermission().then(() => {
-          scheduleAllNotifications();
-          startBackgroundNotificationCheck();
-        });
-      }
-      
-      // Check for notifications on page load
+      if (notificationSettings.enabled) { requestNotificationPermission().then(() => { scheduleAllNotifications(); startBackgroundNotificationCheck(); }); }
       checkImmediateNotifications();
       
-      // Set up WebView interface for Kodular
-      setupKodularWebViewInterface();
-    }
-
-    // Setup Kodular WebView interface
-    function setupKodularWebViewInterface() {
-      // Detect if running in WebView
-      window.isKodularWebView = (typeof Android !== 'undefined' && Android.showNotification);
+      const savedId = localStorage.getItem('onesignal_user_id');
+      if (savedId) { currentOneSignalId = savedId; registerUserWithBackend(savedId); }
       
-      if (window.isKodularWebView) {
-        console.log('Running in Kodular WebView - enabling enhanced notifications');
-        
-        // Create Android interface if it doesn't exist
-        if (!window.Android) {
-          window.Android = {
-            showNotification: function(title, message) {
-              // This will be called by the WebView
-              console.log('Android notification:', title, message);
-            }
-          };
-        }
-        
-        // Request notification permission through WebView
-        if (Android.requestNotificationPermission) {
-          Android.requestNotificationPermission();
-        }
-      }
+      setTimeout(() => { if (window.checkOneSignalStatus) { window.checkOneSignalStatus(); } }, 3000);
     }
-
-    // Service Worker for background notifications (for PWA)
-    function registerServiceWorker() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-          console.log('Service Worker registered with scope:', registration.scope);
-        }).catch(function(error) {
-          console.log('Service Worker registration failed:', error);
-        });
-      }
-    }
-
-    // Start the app
-    document.addEventListener('DOMContentLoaded', initializeApp);
     
-    // Register service worker for PWA capabilities
-    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-      window.addEventListener('load', registerServiceWorker);
-    }
-
-    // Handle page visibility for background notification checks
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden && notificationSettings.enabled) {
-        checkImmediateNotifications();
-      }
+    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('visibilitychange', function() { if (!document.hidden && notificationSettings.enabled) checkImmediateNotifications(); });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const select = document.getElementById('popupDutyType');
+      if (select) select.addEventListener('change', togglePopupDutyTypeInput);
     });
   </script>
 </body>
 </html>
-
-
-
