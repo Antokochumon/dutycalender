@@ -7,19 +7,18 @@
   <meta name="description" content="Professional Duty Calendar App - Advanced scheduling with smart reminders">
   <meta name="onesignal" content="true">
   <title>Duty Calendar 2026</title>
-  
+
   <!-- OneSignal SDK for push notifications - MUST load first -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  
+
   <!-- Add jsPDF library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  
+
   <!-- Add Chart.js for analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
   <style>
-    /* Your existing CSS - keep as is */
     :root {
       --primary: #3b82f6;
       --secondary: #10b981;
@@ -315,7 +314,7 @@
       </div>
     </header>
 
-    <!-- Mobile Menu (keep your existing mobile menu HTML) -->
+    <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu" onclick="closeMobileMenuOnBackdrop(event)">
       <div class="mobile-menu-content">
         <div class="mobile-menu-header">
@@ -598,7 +597,7 @@
     </main>
   </div>
 
-  <!-- Popups (keep your existing popup HTML) -->
+  <!-- Popups -->
   <div class="notes-popup-overlay" id="notesPopup" onclick="closeNotesPopupOnBackdrop(event)">
     <div class="notes-popup">
       <div class="notes-popup-header">
@@ -718,7 +717,7 @@
     // =====================================================
     // COMPLETE DUTY CALENDAR APPLICATION
     // =====================================================
-    
+
     // Global variables
     let duties = JSON.parse(localStorage.getItem('duties')) || [];
     let notes = JSON.parse(localStorage.getItem('dutyNotes')) || [];
@@ -736,8 +735,11 @@
     let touchStartX = 0, touchEndX = 0;
     let currentOneSignalId = null;
 
-    // IMPORTANT: Replace this with your Google Apps Script Web App URL
-    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxZumSGQ_PZL2AEZpkGT9W7D33-pkfyRNmARv7anQjWWnvH9vP3S6eNgQ0OfR75d0Pcfg/exec'
+    // IMPORTANT: Your Google Apps Script Web App URL
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxZumSGQ_PZL2AEZpkGT9W7D33-pkfyRNmARv7anQjWWnvH9vP3S6eNgQ0OfR75d0Pcfg/exec';
+
+    // UUID validation regex (OneSignal subscription IDs are UUIDs)
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     // Helper functions
     function getCurrentDate() { return new Date().toISOString().split('T')[0]; }
@@ -745,23 +747,52 @@
     function formatTime(timeStr) { return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
     function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 
+    // Normalize a value into a valid UUID string, or return null if invalid
+    function normalizeSubscriptionId(value) {
+      if (value && typeof value === 'object') {
+        value = value.id || value.token || null;
+      }
+      if (!value) return null;
+      const idStr = String(value).trim();
+      if (!idStr || idStr === '[object Object]' || idStr === 'null' || idStr === 'undefined') return null;
+      if (!UUID_REGEX.test(idStr)) return null;
+      return idStr;
+    }
+
     // =====================================================
     // ONESIGNAL SETUP
     // =====================================================
-    
+
     function storeOneSignalId(userId) {
-      if (userId && userId !== currentOneSignalId && userId !== "null" && userId !== "undefined") {
-        currentOneSignalId = userId;
-        localStorage.setItem('onesignal_user_id', userId);
-        console.log("✅ OneSignal User ID stored: " + userId);
-        registerUserWithBackend(userId);
+      const idStr = normalizeSubscriptionId(userId);
+      if (!idStr) {
+        if (userId) console.warn('⚠️ Ignoring invalid OneSignal ID:', userId);
+        return;
+      }
+      if (idStr !== currentOneSignalId) {
+        currentOneSignalId = idStr;
+        localStorage.setItem('onesignal_user_id', idStr);
+        console.log('✅ OneSignal User ID stored: ' + idStr);
+        registerUserWithBackend(idStr);
       }
     }
-    
+
     function getStoredOneSignalId() {
-      return localStorage.getItem('onesignal_user_id') || currentOneSignalId;
+      let stored = localStorage.getItem('onesignal_user_id');
+      // Purge legacy corrupted values
+      if (stored === '[object Object]' || stored === 'null' || stored === 'undefined') {
+        console.warn('🧹 Removing corrupted OneSignal ID from localStorage:', stored);
+        localStorage.removeItem('onesignal_user_id');
+        stored = null;
+      }
+      if (stored && !UUID_REGEX.test(stored)) {
+        console.warn('🧹 Removing non-UUID OneSignal ID from localStorage:', stored);
+        localStorage.removeItem('onesignal_user_id');
+        stored = null;
+      }
+      return stored || normalizeSubscriptionId(currentOneSignalId) || null;
     }
-    
+
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
       try {
@@ -773,11 +804,12 @@
           serviceWorkerPath: "/duty/OneSignalSDKWorker.js",
           serviceWorkerParam: { scope: "/duty/" }
         });
-        
+
         setTimeout(async () => {
           try {
             const userId = await OneSignal.User.PushSubscription.id;
-            if (userId) storeOneSignalId(userId);
+            const idStr = normalizeSubscriptionId(userId);
+            if (idStr) storeOneSignalId(idStr);
             else {
               OneSignal.User.PushSubscription.addEventListener("change", (event) => {
                 if (event.current) storeOneSignalId(event.current);
@@ -785,57 +817,63 @@
             }
           } catch(e) { console.log("Error getting OneSignal ID:", e); }
         }, 2000);
-        
+
         setTimeout(async () => {
           const permission = await OneSignal.Notifications.permission;
           if (permission === "default") {
             const result = await OneSignal.Notifications.requestPermission();
             if (result) {
               const userId = await OneSignal.User.PushSubscription.id;
-              if (userId) storeOneSignalId(userId);
+              const idStr = normalizeSubscriptionId(userId);
+              if (idStr) storeOneSignalId(idStr);
             }
           }
         }, 3000);
       } catch(e) { console.log("OneSignal init error:", e); }
     });
-    
+
     async function getOneSignalId() {
       let storedId = getStoredOneSignalId();
-      if (storedId && storedId !== "null" && storedId !== "undefined") return storedId;
+      if (storedId) return storedId;
+
       if (window.OneSignal) {
         try {
           const userId = await OneSignal.User.PushSubscription.id;
-          if (userId) { storeOneSignalId(userId); return userId; }
+          const idStr = normalizeSubscriptionId(userId);
+          if (idStr) {
+            storeOneSignalId(idStr);
+            return idStr;
+          }
         } catch(e) { console.log("Error getting OneSignal ID:", e); }
       }
       return null;
     }
-    
+
     async function registerUserWithBackend(onesignalId) {
-      if (!onesignalId || onesignalId === "null" || onesignalId === "undefined") return false;
+      const idStr = normalizeSubscriptionId(onesignalId);
+      if (!idStr) return false;
       try {
-        const payload = new URLSearchParams({ action: 'register', onesignal_id: onesignalId });
+        const payload = new URLSearchParams({ action: 'register', onesignal_id: idStr });
         await fetch(BACKEND_URL, {
           method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload
         });
-        console.log("✅ User registered with backend:", onesignalId);
+        console.log("✅ User registered with backend:", idStr);
         return true;
       } catch(e) { console.log("Backend registration error:", e); return false; }
     }
-    
+
     // =====================================================
     // NOTIFICATION FUNCTIONS - ALL GO THROUGH BACKEND
     // =====================================================
-    
+
     async function sendBackendNotification(title, message, dutyDate, startTime, dutyType) {
       try {
         const onesignalId = await getOneSignalId();
-        if (!onesignalId) { 
-          showNotification(title, message, 'info'); 
-          return false; 
+        if (!onesignalId) {
+          showNotification(title, message, 'info');
+          return false;
         }
-        
-        // Send to backend which will handle OneSignal API
+
         const payload = new URLSearchParams({
           action: 'send_notification',
           onesignal_id: onesignalId,
@@ -845,22 +883,22 @@
           duty_time: startTime || '',
           duty_type: dutyType || ''
         });
-        
+
         await fetch(BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: payload
         });
-        
+
         console.log("Notification sent via backend:", title);
         return true;
-      } catch(e) { 
-        console.log("Backend notification error:", e); 
-        showNotification(title, message, 'info'); 
-        return false; 
+      } catch(e) {
+        console.log("Backend notification error:", e);
+        showNotification(title, message, 'info');
+        return false;
       }
     }
-    
+
     async function scheduleManualNotification(section) {
       const dateInput = document.getElementById(`manualNotificationDate${section}`);
       const timeInput = document.getElementById(`manualNotificationTime${section}`);
@@ -873,14 +911,13 @@
       const titleText = titleInput && titleInput.value.trim() ? titleInput.value.trim() : 'Manual Reminder';
       const now = new Date();
       if (isNaN(scheduledTime.getTime()) || scheduledTime <= now) { showNotification('Error', 'Please choose a future date and time', 'error'); return; }
-      
+
       const onesignalId = await getOneSignalId();
       if (!onesignalId) {
         showNotification('Notifications Not Ready', 'Please enable push notifications before scheduling a reminder.', 'error');
         return;
       }
-      
-      // Store in backend for scheduled processing
+
       try {
         const payload = new URLSearchParams({
           action: 'store_scheduled_notification',
@@ -895,10 +932,10 @@
           method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload
         });
       } catch(e) { console.log("Storage error:", e); }
-      
+
       showNotification('Manual Reminder Scheduled', `Will be sent at ${scheduledTime.toLocaleString()}`, 'success');
     }
-    
+
     window.checkOneSignalStatus = async function() {
       if (window.OneSignal) {
         try {
@@ -912,7 +949,7 @@
         } catch(e) { console.log("Status check error:", e); }
       }
     };
-    
+
     async function showNotification(title, message, type = 'info') {
       const notification = document.getElementById('notification');
       const titleEl = document.getElementById('notificationTitle');
@@ -920,16 +957,16 @@
       titleEl.textContent = title;
       messageEl.textContent = message;
       notification.className = `notification ${type} show`;
-      
+
       if (notificationSettings.enabled && 'Notification' in window && Notification.permission === 'granted') {
-        try { new Notification(title, { body: message, icon: 'https://cdn-icons-png.flaticon.com/512/2838/2838912.png', tag: 'duty-reminder', renotify: true }); } 
+        try { new Notification(title, { body: message, icon: 'https://cdn-icons-png.flaticon.com/512/2838/2838912.png', tag: 'duty-reminder', renotify: true }); }
         catch(e) { console.log('Browser notification error:', e); }
       }
       setTimeout(() => { hideNotification(); }, 5000);
     }
-    
+
     function hideNotification() { const notification = document.getElementById('notification'); notification.classList.remove('show'); }
-    
+
     async function requestNotificationPermission() {
       try {
         if ('Notification' in window) {
@@ -938,7 +975,8 @@
             showNotification('Notifications Enabled', 'You will now receive reminders for your duties', 'success');
             if (window.OneSignal) {
               const userId = await OneSignal.User.PushSubscription.id;
-              if (userId) await registerUserWithBackend(userId);
+              const idStr = normalizeSubscriptionId(userId);
+              if (idStr) await registerUserWithBackend(idStr);
             }
             return true;
           }
@@ -946,7 +984,7 @@
       } catch(e) { console.error('Notification permission error:', e); }
       return false;
     }
-    
+
     // Core data functions
     function saveDuties() { localStorage.setItem('duties', JSON.stringify(duties)); updateStats(); scheduleAllNotifications(); }
     function saveNotes() { localStorage.setItem('dutyNotes', JSON.stringify(notes)); }
@@ -956,18 +994,27 @@
       if (notificationSettings.enabled) { scheduleAllNotifications(); startBackgroundNotificationCheck(); }
       else { clearAllNotifications(); stopBackgroundNotificationCheck(); }
     }
-    
+
     async function storeScheduledBackendNotification(onesignalId, title, message, scheduledDateTime) {
-      if (!onesignalId || !scheduledDateTime || isNaN(scheduledDateTime.getTime())) return false;
+      // Normalize + validate before anything is sent
+      const subId = normalizeSubscriptionId(onesignalId);
+      if (!subId) {
+        console.warn('❌ Aborting scheduled notification — invalid subscription_id:', onesignalId);
+        return false;
+      }
+
+      if (!scheduledDateTime || isNaN(scheduledDateTime.getTime())) return false;
+
       const payload = new URLSearchParams({
         action: 'store_scheduled_notification',
-        subscription_id: onesignalId,
+        subscription_id: subId,
         selected_date: `${scheduledDateTime.getFullYear()}-${String(scheduledDateTime.getMonth() + 1).padStart(2, '0')}-${String(scheduledDateTime.getDate()).padStart(2, '0')}`,
         selected_time: `${String(scheduledDateTime.getHours()).padStart(2, '0')}:${String(scheduledDateTime.getMinutes()).padStart(2, '0')}`,
         title: title,
         message: message,
         scheduled_timestamp: scheduledDateTime.toISOString()
       });
+
       try {
         await fetch(BACKEND_URL, {
           method: 'POST', mode: 'no-cors',
@@ -1038,7 +1085,7 @@
     function clearAllNotifications() { Object.keys(notificationTimeouts).forEach(key => clearTimeout(notificationTimeouts[key])); notificationTimeouts = {}; }
     function startBackgroundNotificationCheck() { if (backgroundNotificationCheck) return; backgroundNotificationCheck = setInterval(() => { checkImmediateNotifications(); }, 60000); }
     function stopBackgroundNotificationCheck() { if (backgroundNotificationCheck) { clearInterval(backgroundNotificationCheck); backgroundNotificationCheck = null; } }
-    
+
     function checkImmediateNotifications() {
       if (!notificationSettings.enabled) return;
       const now = new Date();
@@ -1055,13 +1102,13 @@
         }
       });
     }
-    
+
     function clearDutyNotifications(dutyId) { ['24hour', '1hour', '30min'].forEach(period => { const key = `${dutyId}-${period}`; if (notificationTimeouts[key]) { clearTimeout(notificationTimeouts[key]); delete notificationTimeouts[key]; } }); }
-    
-    // UI Functions (keep your existing UI functions - toggleMobileMenu, toggleTheme, toggleNotification, etc.)
+
+    // UI Functions
     function toggleMobileMenu() { const menu = document.getElementById('mobileMenu'); menu.classList.toggle('active'); document.getElementById('mobileDutyDate').value = selectedDate; }
     function closeMobileMenuOnBackdrop(event) { if (event.target === event.currentTarget) { toggleMobileMenu(); } }
-    
+
     function toggleTheme() {
       document.body.classList.toggle('dark');
       const isDark = document.body.classList.contains('dark');
@@ -1071,7 +1118,7 @@
       document.getElementById('mobileThemeText').textContent = isDark ? 'Light Mode' : 'Dark Mode';
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
-    
+
     function toggleNotification(type) {
       notificationSettings[type] = !notificationSettings[type];
       saveNotificationSettings();
@@ -1088,7 +1135,7 @@
         else { clearAllNotifications(); }
       }
     }
-    
+
     function toggleNotificationOption(option) {
       notificationSettings[option] = !notificationSettings[option];
       saveNotificationSettings();
@@ -1097,13 +1144,13 @@
       if (desktopToggle) desktopToggle.checked = notificationSettings[option];
       if (mobileToggle) mobileToggle.checked = notificationSettings[option];
     }
-    
+
     function testNotification() {
       if (!notificationSettings.enabled) { showNotification('Notifications Disabled', 'Please enable notifications first', 'warning'); return; }
       showNotification('Test Notification', 'This is a test notification. You will receive similar alerts before your duties.', 'info');
       sendBackendNotification('Test Notification', 'Your push notification system is working!', '', '', 'test');
     }
-    
+
     function addDuty() {
       const date = document.getElementById('dutyDate').value;
       const startTime = document.getElementById('startTime').value;
@@ -1124,7 +1171,7 @@
       showNotification('Success', 'Duty added successfully!', 'success');
       sendBackendNotification('New Duty Added', `You have a new ${type} duty on ${date} from ${startTime} to ${endTime}`, date, startTime, type);
     }
-    
+
     function addDutyMobile() {
       const date = document.getElementById('mobileDutyDate').value;
       const startTime = document.getElementById('mobileStartTime').value;
@@ -1145,7 +1192,7 @@
       showNotification('Success', 'Duty added successfully!', 'success');
       toggleMobileMenu();
     }
-    
+
     function removeDuty() {
       const date = document.getElementById('dutyDate').value;
       if (!date) { showNotification('Error', 'Please select a date', 'error'); return; }
@@ -1157,7 +1204,7 @@
       renderCalendar();
       showNotification('Success', 'Duty removed successfully', 'success');
     }
-    
+
     function removeDutyMobile() {
       const date = document.getElementById('mobileDutyDate').value;
       if (!date) { showNotification('Error', 'Please select a date', 'error'); return; }
@@ -1170,12 +1217,12 @@
       showNotification('Success', 'Duty removed successfully', 'success');
       toggleMobileMenu();
     }
-    
-    // Notes functions (keep your existing note functions)
+
+    // Notes functions
     function showNotesView() { document.getElementById('allNotesPopup').classList.add('active'); renderAllNotes(); }
     function hideAllNotesPopup() { document.getElementById('allNotesPopup').classList.remove('active'); }
     function closeAllNotesPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideAllNotesPopup(); }
-    
+
     function renderAllNotes() {
       const notesList = document.getElementById('allNotesList');
       notesList.innerHTML = '';
@@ -1188,7 +1235,7 @@
         notesList.appendChild(noteElement);
       });
     }
-    
+
     function addNewNote() {
       const date = document.getElementById('newNoteDate').value;
       const content = document.getElementById('newNoteContent').value;
@@ -1200,16 +1247,16 @@
       renderAllNotes();
       showNotification('Success', 'Note added successfully', 'success');
     }
-    
+
     function deleteNoteFromAllView(noteId) {
       const noteIndex = notes.findIndex(note => note.id === noteId);
       if (noteIndex !== -1) { notes.splice(noteIndex, 1); saveNotes(); renderAllNotes(); showNotification('Success', 'Note deleted successfully', 'success'); }
     }
-    
+
     function showNotesPopup(dateStr) { selectedDate = dateStr; document.getElementById('notesPopup').classList.add('active'); document.getElementById('notesPopupDate').textContent = formatDate(dateStr); renderExistingNotes(dateStr); document.getElementById('notesPopupContent').value = ''; }
     function hideNotesPopup() { document.getElementById('notesPopup').classList.remove('active'); }
     function closeNotesPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideNotesPopup(); }
-    
+
     function renderExistingNotes(dateStr) {
       const notesList = document.getElementById('existingNotesList');
       notesList.innerHTML = '';
@@ -1222,7 +1269,7 @@
         notesList.appendChild(noteElement);
       });
     }
-    
+
     function saveNoteFromPopup() {
       const content = document.getElementById('notesPopupContent').value;
       if (!content) { showNotification('Error', 'Please enter a note', 'error'); return; }
@@ -1232,12 +1279,12 @@
       document.getElementById('notesPopupContent').value = '';
       showNotification('Success', 'Note added successfully', 'success');
     }
-    
+
     function deleteNote(noteId) {
       const noteIndex = notes.findIndex(note => note.id === noteId);
       if (noteIndex !== -1) { notes.splice(noteIndex, 1); saveNotes(); renderExistingNotes(selectedDate); showNotification('Success', 'Note deleted successfully', 'success'); }
     }
-    
+
     // Popup notes
     function renderPopupNotes(dateStr) {
       const notesList = document.getElementById('popupNotesList');
@@ -1252,7 +1299,7 @@
         notesList.appendChild(noteElement);
       });
     }
-    
+
     function addOrUpdatePopupNote() {
       const content = document.getElementById('popupNoteInput').value.trim();
       if (!content) { showNotification('Error', 'Enter a note before adding', 'error'); return; }
@@ -1269,7 +1316,7 @@
       document.getElementById('popupNoteAddBtn').textContent = 'Add';
       editingPopupNoteId = null;
     }
-    
+
     function editPopupNote(noteId) {
       const note = notes.find(item => item.id === noteId);
       if (!note) return;
@@ -1277,7 +1324,7 @@
       document.getElementById('popupNoteAddBtn').textContent = 'Update';
       editingPopupNoteId = noteId;
     }
-    
+
     function deletePopupNote(noteId) {
       const noteIndex = notes.findIndex(note => note.id === noteId);
       if (noteIndex === -1) return;
@@ -1286,7 +1333,7 @@
       renderPopupNotes(selectedDate);
       showNotification('Success', 'Note removed', 'success');
     }
-    
+
     // Todo functions
     function renderTodoList(dateStr) {
       const todoList = document.getElementById('todoList');
@@ -1301,7 +1348,7 @@
         todoList.appendChild(todoElement);
       });
     }
-    
+
     function addTodoItem() {
       const input = document.getElementById('todoInput');
       if (!input) return;
@@ -1313,7 +1360,7 @@
       renderTodoList(selectedDate);
       showNotification('Task added', 'Your task has been saved for this date', 'success');
     }
-    
+
     function toggleTodoComplete(todoId) {
       const todoIndex = todoItems.findIndex(item => item.id === todoId);
       if (todoIndex === -1) return;
@@ -1321,7 +1368,7 @@
       saveTodoItems();
       renderTodoList(selectedDate);
     }
-    
+
     function deleteTodoItem(todoId) {
       const todoIndex = todoItems.findIndex(item => item.id === todoId);
       if (todoIndex === -1) return;
@@ -1330,7 +1377,7 @@
       renderTodoList(selectedDate);
       showNotification('Task removed', 'The task was deleted successfully', 'success');
     }
-    
+
     // Duty popup functions
     function togglePopupDutyTypeInput() {
       const select = document.getElementById('popupDutyType');
@@ -1339,7 +1386,7 @@
       if (select.value === 'custom') { custom.style.display = 'block'; }
       else { custom.style.display = 'none'; custom.value = ''; }
     }
-    
+
     function showDutyPopup(dateStr) {
       selectedDate = dateStr;
       const popup = document.getElementById('dutyPopup');
@@ -1353,10 +1400,10 @@
       editingPopupNoteId = null;
       document.getElementById('todoInput').value = '';
     }
-    
+
     function hideDutyPopup() { document.getElementById('dutyPopup').classList.remove('active'); }
     function closeDutyPopupOnBackdrop(event) { if (event.target === event.currentTarget) hideDutyPopup(); }
-    
+
     function renderExistingDuty(dateStr) {
       const dutyInfo = document.getElementById('existingDutyInfo');
       const deleteBtn = document.getElementById('popupDeleteBtn');
@@ -1388,7 +1435,7 @@
         togglePopupDutyTypeInput();
       }
     }
-    
+
     function saveDutyFromPopup() {
       const date = selectedDate;
       const startTime = document.getElementById('popupStartTime').value;
@@ -1409,7 +1456,7 @@
       hideDutyPopup();
       showNotification('Success', 'Duty saved successfully', 'success');
     }
-    
+
     function deleteDutyFromPopup() {
       const date = selectedDate;
       const dutyIndex = duties.findIndex(duty => duty.date === date);
@@ -1421,10 +1468,10 @@
       hideDutyPopup();
       showNotification('Success', 'Duty deleted successfully', 'success');
     }
-    
+
     // Calendar functions
     function changeMonth(direction) { currentMonth.setMonth(currentMonth.getMonth() + direction); renderCalendar(); }
-    
+
     function handleDateClick(dateStr) {
       selectedDate = dateStr;
       document.getElementById('dutyDate').value = dateStr;
@@ -1433,7 +1480,7 @@
       const duty = duties.find(d => d.date === dateStr);
       if (duty) { showNotification('Duty Info', `${duty.type.charAt(0).toUpperCase() + duty.type.slice(1)} duty from ${duty.startTime} to ${duty.endTime}`, 'info'); }
     }
-    
+
     function renderCalendar() {
       const calendar = document.getElementById('calendarGrid');
       const title = document.getElementById('calendarTitle');
@@ -1479,7 +1526,7 @@
         calendar.appendChild(dateElement);
       }
     }
-    
+
     function updateStats() {
       const currentDate = new Date();
       const currentMonthDuties = duties.filter(duty => { const dutyDate = new Date(duty.date); return dutyDate.getMonth() === currentDate.getMonth() && dutyDate.getFullYear() === currentDate.getFullYear(); });
@@ -1492,12 +1539,12 @@
       document.getElementById('nextDuty').textContent = nextDuty;
       document.getElementById('avgHours').textContent = avgHours;
     }
-    
+
     // Analytics
     function showAnalytics() { document.getElementById('analyticsModal').classList.add('active'); renderAnalytics(); }
     function hideAnalytics() { document.getElementById('analyticsModal').classList.remove('active'); }
     function closeModalOnBackdrop(event) { if (event.target === event.currentTarget) hideAnalytics(); }
-    
+
     function renderAnalytics() {
       const dutyTypes = { regular: 0, overtime: 0, holiday: 0, training: 0, meeting: 0, emergency: 0 };
       let totalHours = 0, overtimeHours = 0, holidayCount = 0, totalDutyLength = 0;
@@ -1516,7 +1563,7 @@
       document.getElementById('overtimeHours').textContent = Math.round(overtimeHours);
       document.getElementById('holidayCount').textContent = holidayCount;
       document.getElementById('avgDutyLength').textContent = avgDutyLength;
-      
+
       const dutyTypeCtx = document.getElementById('dutyTypeChart').getContext('2d');
       if (window.dutyTypeChartInstance) window.dutyTypeChartInstance.destroy();
       window.dutyTypeChartInstance = new Chart(dutyTypeCtx, {
@@ -1524,7 +1571,7 @@
         data: { labels: ['Regular', 'Overtime', 'Holiday', 'Training', 'Meeting', 'Emergency'], datasets: [{ data: [dutyTypes.regular, dutyTypes.overtime, dutyTypes.holiday, dutyTypes.training, dutyTypes.meeting, dutyTypes.emergency], backgroundColor: ['rgba(34,197,94,0.7)','rgba(249,115,22,0.7)','rgba(139,92,246,0.7)','rgba(6,182,212,0.7)','rgba(236,72,153,0.7)','rgba(220,38,38,0.7)'], borderWidth: 1 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Duty Types Distribution', font: { size: 16 } }, legend: { position: 'bottom' } } }
       });
-      
+
       const monthlyHoursCtx = document.getElementById('monthlyHoursChart').getContext('2d');
       if (window.monthlyHoursChartInstance) window.monthlyHoursChartInstance.destroy();
       const monthlyHours = Array(12).fill(0);
@@ -1543,7 +1590,7 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Monthly Hours', font: { size: 16 } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } } }
       });
     }
-    
+
     function exportToPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -1556,7 +1603,7 @@
       doc.save(`duty_calendar_${new Date().toISOString().slice(0,10)}.pdf`);
       showNotification('Export Successful', 'PDF has been generated', 'success');
     }
-    
+
     function handleTouchStart(e) { touchStartX = e.changedTouches[0].screenX; }
     function handleTouchEnd(e) {
       touchEndX = e.changedTouches[0].screenX;
@@ -1564,7 +1611,7 @@
       const diff = touchEndX - touchStartX;
       if (Math.abs(diff) > threshold) { if (diff > 0) changeMonth(-1); else changeMonth(1); }
     }
-    
+
     // Initialize
     function initializeApp() {
       selectedDate = getCurrentDate();
@@ -1590,7 +1637,7 @@
       document.getElementById('mobile24HourToggle').checked = notificationSettings['24hour'];
       document.getElementById('mobile1HourToggle').checked = notificationSettings['1hour'];
       document.getElementById('mobile30MinToggle').checked = notificationSettings['30min'];
-      
+
       const manualDesktopDate = document.getElementById('manualNotificationDateDesktop');
       const manualDesktopTime = document.getElementById('manualNotificationTimeDesktop');
       const manualMobileDate = document.getElementById('manualNotificationDateMobile');
@@ -1599,39 +1646,44 @@
       if (manualMobileDate) manualMobileDate.value = selectedDate;
       if (manualDesktopTime) manualDesktopTime.value = '09:00';
       if (manualMobileTime) manualMobileTime.value = '09:00';
-      
+
       const desktopOptions = document.getElementById('desktopNotificationOptions');
       const mobileOptions = document.getElementById('mobileNotificationOptions');
       if (desktopOptions) desktopOptions.style.display = notificationSettings.enabled ? 'block' : 'none';
       if (mobileOptions) mobileOptions.style.display = notificationSettings.enabled ? 'block' : 'none';
-      
+
       const calendarGrid = document.getElementById('calendarGrid');
       calendarGrid.addEventListener('touchstart', handleTouchStart, false);
       calendarGrid.addEventListener('touchend', handleTouchEnd, false);
-      
+
       renderCalendar();
       updateStats();
       if (notificationSettings.enabled) { requestNotificationPermission().then(() => { scheduleAllNotifications(); startBackgroundNotificationCheck(); }); }
       checkImmediateNotifications();
-      
-      const savedId = localStorage.getItem('onesignal_user_id');
+
+      // One-time purge of corrupted IDs from earlier versions
+      const badId = localStorage.getItem('onesignal_user_id');
+      if (badId === '[object Object]' || badId === 'null' || badId === 'undefined' || (badId && !UUID_REGEX.test(badId))) {
+        localStorage.removeItem('onesignal_user_id');
+        console.warn('🧹 Purged corrupted OneSignal ID');
+      }
+
+      const savedId = getStoredOneSignalId();
       if (savedId) { currentOneSignalId = savedId; registerUserWithBackend(savedId); }
-      
+
       setTimeout(() => { if (window.checkOneSignalStatus) { window.checkOneSignalStatus(); } }, 3000);
     }
-    
+
     document.addEventListener('DOMContentLoaded', initializeApp);
     document.addEventListener('visibilitychange', function() { if (!document.hidden && notificationSettings.enabled) checkImmediateNotifications(); });
-    
+
     document.addEventListener('DOMContentLoaded', function() {
       const select = document.getElementById('popupDutyType');
       if (select) select.addEventListener('change', togglePopupDutyTypeInput);
     });
   </script>
 
+  <script>(function(s){s.dataset.zone='10458010',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
-
-<script>(function(s){s.dataset.zone='10458010',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  
 </body>
 </html>
