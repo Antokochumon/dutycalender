@@ -875,15 +875,20 @@
       if (isNaN(scheduledTime.getTime()) || scheduledTime <= now) { showNotification('Error', 'Please choose a future date and time', 'error'); return; }
       
       const onesignalId = await getOneSignalId();
+      if (!onesignalId) {
+        showNotification('Notifications Not Ready', 'Please enable push notifications before scheduling a reminder.', 'error');
+        return;
+      }
       
       // Store in backend for scheduled processing
       try {
         const payload = new URLSearchParams({
           action: 'store_scheduled_notification',
-          subscription_id: onesignalId || 'pending',
+          subscription_id: onesignalId,
           selected_date: date,
           selected_time: time,
           title: titleText,
+          scheduled_timestamp: scheduledTime.toISOString(),
           timestamp: new Date().toISOString()
         });
         await fetch(BACKEND_URL, {
@@ -952,60 +957,84 @@
       else { clearAllNotifications(); stopBackgroundNotificationCheck(); }
     }
     
+    async function storeScheduledBackendNotification(onesignalId, title, message, scheduledDateTime) {
+      if (!onesignalId || !scheduledDateTime || isNaN(scheduledDateTime.getTime())) return false;
+      const payload = new URLSearchParams({
+        action: 'store_scheduled_notification',
+        subscription_id: onesignalId,
+        selected_date: `${scheduledDateTime.getFullYear()}-${String(scheduledDateTime.getMonth() + 1).padStart(2, '0')}-${String(scheduledDateTime.getDate()).padStart(2, '0')}`,
+        selected_time: `${String(scheduledDateTime.getHours()).padStart(2, '0')}:${String(scheduledDateTime.getMinutes()).padStart(2, '0')}`,
+        title: title,
+        message: message,
+        scheduled_timestamp: scheduledDateTime.toISOString()
+      });
+      try {
+        await fetch(BACKEND_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
+        return true;
+      } catch (e) {
+        console.error('Could not queue scheduled notification:', title, e);
+        return false;
+      }
+    }
+
     async function scheduleAllNotifications() {
       if (!notificationSettings.enabled) return;
-      
+
       const onesignalId = await getOneSignalId();
       if (!onesignalId) {
-        console.log("Cannot schedule notifications: No OneSignal ID");
+        console.log('Cannot schedule notifications: No OneSignal ID');
         return;
       }
-      
+
       const now = new Date();
-      
       for (const duty of duties) {
         const dutyDateTime = new Date(`${duty.date}T${duty.startTime}`);
-        if (dutyDateTime <= now) continue;
-        
-        // Schedule reminders via backend
+        if (isNaN(dutyDateTime.getTime()) || dutyDateTime <= now) continue;
+
+        const reminders = [];
         if (notificationSettings['24hour']) {
-          const twentyFourHoursBefore = new Date(dutyDateTime);
-          twentyFourHoursBefore.setHours(twentyFourHoursBefore.getHours() - 24);
-          if (twentyFourHoursBefore > now) {
-            await sendBackendNotification(
-              'Upcoming Duty Tomorrow',
-              `You have a ${duty.type} duty scheduled for tomorrow at ${formatTime(duty.startTime)}`,
-              duty.date, duty.startTime, duty.type
-            );
-          }
+          const reminderTime = new Date(dutyDateTime);
+          reminderTime.setHours(reminderTime.getHours() - 24);
+          reminders.push({
+            enabled: reminderTime > now,
+            time: reminderTime,
+            title: 'Upcoming Duty Tomorrow',
+            message: `You have a ${duty.type} duty scheduled for tomorrow at ${formatTime(duty.startTime)}`
+          });
         }
-        
         if (notificationSettings['1hour']) {
-          const oneHourBefore = new Date(dutyDateTime);
-          oneHourBefore.setHours(oneHourBefore.getHours() - 1);
-          if (oneHourBefore > now) {
-            await sendBackendNotification(
-              'Upcoming Duty in 1 Hour',
-              `Your ${duty.type} duty starts at ${formatTime(duty.startTime)}`,
-              duty.date, duty.startTime, duty.type
-            );
-          }
+          const reminderTime = new Date(dutyDateTime);
+          reminderTime.setHours(reminderTime.getHours() - 1);
+          reminders.push({
+            enabled: reminderTime > now,
+            time: reminderTime,
+            title: 'Upcoming Duty in 1 Hour',
+            message: `Your ${duty.type} duty starts at ${formatTime(duty.startTime)}`
+          });
         }
-        
         if (notificationSettings['30min']) {
-          const thirtyMinutesBefore = new Date(dutyDateTime);
-          thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
-          if (thirtyMinutesBefore > now) {
-            await sendBackendNotification(
-              'Upcoming Duty in 30 Minutes',
-              `Your ${duty.type} duty starts soon at ${formatTime(duty.startTime)}`,
-              duty.date, duty.startTime, duty.type
-            );
+          const reminderTime = new Date(dutyDateTime);
+          reminderTime.setMinutes(reminderTime.getMinutes() - 30);
+          reminders.push({
+            enabled: reminderTime > now,
+            time: reminderTime,
+            title: 'Upcoming Duty in 30 Minutes',
+            message: `Your ${duty.type} duty starts soon at ${formatTime(duty.startTime)}`
+          });
+        }
+
+        for (const reminder of reminders) {
+          if (reminder.enabled) {
+            await storeScheduledBackendNotification(onesignalId, reminder.title, reminder.message, reminder.time);
           }
         }
       }
     }
-    
+
     function clearAllNotifications() { Object.keys(notificationTimeouts).forEach(key => clearTimeout(notificationTimeouts[key])); notificationTimeouts = {}; }
     function startBackgroundNotificationCheck() { if (backgroundNotificationCheck) return; backgroundNotificationCheck = setInterval(() => { checkImmediateNotifications(); }, 60000); }
     function stopBackgroundNotificationCheck() { if (backgroundNotificationCheck) { clearInterval(backgroundNotificationCheck); backgroundNotificationCheck = null; } }
