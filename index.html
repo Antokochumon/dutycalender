@@ -925,8 +925,7 @@
           selected_date: date,
           selected_time: time,
           title: titleText,
-          scheduled_timestamp: scheduledTime.toISOString(),
-          timestamp: new Date().toISOString()
+          scheduled_timestamp: scheduledTime.toISOString()
         });
         await fetch(BACKEND_URL, {
           method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload
